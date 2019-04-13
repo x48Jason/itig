@@ -33,6 +33,7 @@
 #include "tig/draw.h"
 #include "tig/display.h"
 #include "tig/prompt.h"
+#include "tig/bplist.h"
 
 /* Views. */
 #include "tig/blame.h"
@@ -504,6 +505,30 @@ parse_options(int argc, const char *argv[], bool pager_mode)
 			if (chdir(dir))
 				die("Failed to change directory to %s", dir);
 			continue;
+		} else if (!strncmp(opt, "-l", 2)) {
+			const char *fn = opt+2;
+			int rc;
+
+			if (*fn == '\0') {
+				if (i+1<argc) {
+					fn = argv[i+1];
+					if (!*fn || !strncmp(fn, "--", 2))
+						report("error reading bplist (-l)");
+				} else {
+					report("error reading bplist (-l)");
+				}
+			}
+			rc = bplist_read(&global_bplist, fn);
+			switch (rc) {
+			case 0:
+				break;
+			case ENOENT:
+				bplist_set_fn(&global_bplist, fn);
+				break;
+			default:
+				report("error reading bplist %s (-l)", fn);
+				break;
+			}
 		} else {
 			break;
 		}
@@ -832,8 +857,16 @@ main(int argc, const char *argv[])
 {
 	const char *codeset = ENCODING_UTF8;
 	bool pager_mode = !isatty(STDIN_FILENO);
-	enum request request = parse_options(argc, argv, pager_mode);
+	enum request request;
 	struct view *view;
+
+	init_bplist();
+
+	request = parse_options(argc, argv, pager_mode);
+
+	init_tty();
+
+	atexit(hangup_children);
 
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		die("Failed to setup signal handler");
@@ -909,6 +942,9 @@ main(int argc, const char *argv[])
 			break;
 		}
 	}
+
+	if (bplist_get_fn(&global_bplist))
+		bplist_write(&global_bplist, NULL);
 
 	exit(EXIT_SUCCESS);
 
