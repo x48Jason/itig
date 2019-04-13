@@ -361,6 +361,7 @@ TIG_OBJS = \
 	src/ui.o \
 	src/apps.o \
 	src/registers.o \
+	src/bplist.o \
 	$(GRAPH_OBJS) \
 	$(COMPAT_OBJS)
 
