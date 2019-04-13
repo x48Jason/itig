@@ -15,6 +15,7 @@
 #include "tig/graph.h"
 #include "tig/draw.h"
 #include "tig/options.h"
+#include "tig/bplist.h"
 #include "compat/hashtab.h"
 
 static const enum line_type palette_colors[] = {
@@ -450,8 +451,10 @@ draw_graph(struct view *view, const struct graph *graph, const struct graph_canv
 static bool
 draw_commit_title(struct view *view, struct view_column *column, enum line_type type,
 		  const struct graph *graph, const struct graph_canvas *graph_canvas,
-		  const struct ref *refs, const char *commit_title)
+		  const struct ref *refs, const char *commit_title, const char *commit_id)
 {
+	enum line_type ltype = LINE_DEFAULT;
+
 	if (!column->opt.commit_title.display)
 		return false;
 	if (column->opt.commit_title.graph && graph && graph_canvas &&
@@ -460,7 +463,11 @@ draw_commit_title(struct view *view, struct view_column *column, enum line_type 
 	if (column->opt.commit_title.refs && refs &&
 	    draw_refs(view, column, refs))
 		return true;
-	return draw_text_overflow(view, commit_title, type,
+
+	if (commit_id && bplist_has_rev(&global_bplist, commit_id))
+		ltype = LINE_MAIN_BP_MARK;
+
+	return draw_text_overflow(view, commit_title, ltype,
 			column->opt.commit_title.overflow, 0);
 }
 
@@ -524,7 +531,7 @@ view_column_draw(struct view *view, struct line *line, unsigned int lineno)
 
 		case VIEW_COLUMN_COMMIT_TITLE:
 			if (draw_commit_title(view, column, line->type == LINE_MAIN_ANNOTATED ? LINE_MAIN_ANNOTATED : LINE_MAIN_COMMIT,
-					      column_data.graph, column_data.graph_canvas, column_data.refs, column_data.commit_title))
+					      column_data.graph, column_data.graph_canvas, column_data.refs, column_data.commit_title, column_data.id))
 				return true;
 			continue;
 
