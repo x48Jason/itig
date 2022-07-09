@@ -74,17 +74,19 @@ open_external_viewer(const char *argv[], const char *dir, bool silent, bool conf
 
 		io_run_buf(argv, buf, sizeof(buf), dir, false);
 		if (*buf) {
-			if (register_key)
+			if (register_key) {
 				register_set(register_key, buf);
-			if (echo)
+				report("Register %c: %s", register_key, buf);
+			} else if (echo)
 				report("%s", buf);
 			else
 				report_clear();
 			return true;
 		} else {
-			if (register_key)
+			if (register_key) {
 				register_set(register_key, "");
-			if (echo)
+				report("Register %c: cleared", register_key);
+			} else if (echo)
 				report("No output");
 			else
 				report_clear();
