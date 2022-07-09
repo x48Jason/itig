@@ -59,6 +59,14 @@
 	GIT_MAIN_LOG(encoding_arg, commit_order_arg, mainargs, diffargs, revargs, fileargs, show_notes_arg, \
 		     "--pretty=raw")
 
+#define GIT_QUICK_LOG(encoding_arg, commit_order_arg, diffargs, revargs, show_notes_arg, pretty_arg) \
+	"git", "log", (encoding_arg), \
+		(commit_order_arg), (diffargs), (revargs), "--date=raw", "--parents", \
+		"--no-color", (show_notes_arg), (pretty_arg), NULL
+
+#define GIT_QUICK_LOG_RAW(encoding_arg, commit_order_arg, diffargs, revargs, show_notes_arg) \
+	GIT_QUICK_LOG(encoding_arg, commit_order_arg, diffargs, revargs, show_notes_arg, "--pretty=raw")
+
 #endif
 
 /* vim: set ts=8 sw=8 noexpandtab: */

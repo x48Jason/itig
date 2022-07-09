@@ -22,23 +22,22 @@
 #include "tig/git.h"
 #include "tig/status.h"
 #include "tig/stage.h"
-#include "tig/main.h"
 #include "tig/quick.h"
 #include "tig/diff.h"
 #include "tig/search.h"
 
 /*
- * Main view backend
+ * Quick view backend
  */
 
 DEFINE_ALLOCATOR(realloc_reflogs, char *, 32)
 
-static struct view_history main_view_history = { sizeof(unsigned long) };
+static struct view_history quick_view_history = { sizeof(unsigned long) };
 
 bool
-main_status_exists(struct view *view, enum line_type type)
+quick_status_exists(struct view *view, enum line_type type)
 {
-	struct main_state *state;
+	struct quick_state *state;
 
 	refresh_view(view);
 
@@ -54,19 +53,19 @@ main_status_exists(struct view *view, enum line_type type)
 	return false;
 }
 
-static bool main_add_changes(struct view *view, struct main_state *state, const char *parent);
+static bool quick_add_changes(struct view *view, struct quick_state *state, const char *parent);
 
 static void
-main_register_commit(struct view *view, struct commit *commit, const char *ids, bool is_boundary)
+quick_register_commit(struct view *view, struct qcommit *commit, const char *ids, bool is_boundary)
 {
-	struct main_state *state = view->private;
+	struct quick_state *state = view->private;
 	struct graph *graph = state->graph;
 
 	string_copy_rev(commit->id, ids);
 
-	/* FIXME: lazily check index state here instead of in main_open. */
+	/* FIXME: lazily check index state here instead of in quick_open. */
 	if ((state->add_changes_untracked || state->add_changes_unstaged || state->add_changes_staged) && is_head_commit(commit->id)) {
-		main_add_changes(view, state, ids);
+		quick_add_changes(view, state, ids);
 		state->add_changes_untracked = state->add_changes_unstaged = state->add_changes_staged = false;
 	}
 
@@ -74,13 +73,13 @@ main_register_commit(struct view *view, struct commit *commit, const char *ids, 
 		graph->add_commit(graph, &commit->graph, commit->id, ids, is_boundary);
 }
 
-static struct commit *
-main_add_commit(struct view *view, enum line_type type, struct commit *template,
+static struct qcommit *
+quick_add_commit(struct view *view, enum line_type type, struct qcommit *template,
 		const char *title, bool custom)
 {
-	struct main_state *state = view->private;
+	struct quick_state *state = view->private;
 	size_t titlelen;
-	struct commit *commit;
+	struct qcommit *commit;
 	char buf[SIZEOF_STR / 2];
 	struct line *line;
 
@@ -109,19 +108,19 @@ main_add_commit(struct view *view, enum line_type type, struct commit *template,
 }
 
 static inline void
-main_flush_commit(struct view *view, struct commit *commit)
+quick_flush_commit(struct view *view, struct qcommit *commit)
 {
 	if (*commit->id)
-		main_add_commit(view, LINE_MAIN_COMMIT, commit, "", false);
+		quick_add_commit(view, LINE_MAIN_COMMIT, commit, "", false);
 }
 
 static bool
-main_add_changes_commit(struct view *view, enum line_type type, const char *parent, const char *title)
+quick_add_changes_commit(struct view *view, enum line_type type, const char *parent, const char *title)
 {
 	char ids[SIZEOF_STR] = NULL_ID " ";
-	struct main_state *state = view->private;
+	struct quick_state *state = view->private;
 	struct graph *graph = state->graph;
-	struct commit commit = {{0}};
+	struct qcommit commit = {{0}};
 	struct timeval now;
 	struct timezone tz;
 
@@ -139,11 +138,11 @@ main_add_changes_commit(struct view *view, enum line_type type, const char *pare
 	}
 
 	commit.author = &unknown_ident;
-	main_register_commit(view, &commit, ids, false);
+	quick_register_commit(view, &commit, ids, false);
 	if (state->with_graph && *parent)
 		graph->render_parents(graph, &commit.graph);
 
-	if (!main_add_commit(view, type, &commit, title, true))
+	if (!quick_add_commit(view, type, &commit, title, true))
 		return false;
 
 	if (state->goto_line_type == type)
@@ -153,7 +152,7 @@ main_add_changes_commit(struct view *view, enum line_type type, const char *pare
 }
 
 static bool
-main_check_index(struct view *view, struct main_state *state)
+quick_check_index(struct view *view, struct quick_state *state)
 {
 	struct index_diff diff;
 
@@ -185,7 +184,7 @@ main_check_index(struct view *view, struct main_state *state)
 }
 
 static bool
-main_add_changes(struct view *view, struct main_state *state, const char *parent)
+quick_add_changes(struct view *view, struct quick_state *state, const char *parent)
 {
 	const char *staged_parent = parent;
 	const char *unstaged_parent = NULL_ID;
@@ -206,15 +205,15 @@ main_add_changes(struct view *view, struct main_state *state, const char *parent
 		untracked_parent = NULL;
 	}
 
-	return main_add_changes_commit(view, LINE_STAT_UNTRACKED, untracked_parent, "Untracked changes")
-	    && main_add_changes_commit(view, LINE_STAT_UNSTAGED, unstaged_parent, "Unstaged changes")
-	    && main_add_changes_commit(view, LINE_STAT_STAGED, staged_parent, "Staged changes");
+	return quick_add_changes_commit(view, LINE_STAT_UNTRACKED, untracked_parent, "Untracked changes")
+	    && quick_add_changes_commit(view, LINE_STAT_UNSTAGED, unstaged_parent, "Unstaged changes")
+	    && quick_add_changes_commit(view, LINE_STAT_STAGED, staged_parent, "Staged changes");
 }
 
 static bool
-main_check_argv(struct view *view, const char *argv[])
+quick_check_argv(struct view *view, const char *argv[])
 {
-	struct main_state *state = view->private;
+	struct quick_state *state = view->private;
 	bool with_reflog = false;
 	int i;
 
@@ -262,29 +261,27 @@ main_check_argv(struct view *view, const char *argv[])
 }
 
 static enum graph_display
-main_with_graph(struct view *view, struct view_column *column, enum open_flags flags)
+quick_with_graph(struct view *view, struct view_column *column, enum open_flags flags)
 {
 	return column && opt_commit_order != COMMIT_ORDER_REVERSE && !open_in_pager_mode(flags) && !opt_log_follow
 	       ? column->opt.commit_title.graph : GRAPH_DISPLAY_NO;
 }
 
 static enum status_code
-main_open(struct view *view, enum open_flags flags)
+quick_open(struct view *view, enum open_flags flags)
 {
 	struct view_column *commit_title_column = get_view_column(view, VIEW_COLUMN_COMMIT_TITLE);
-	enum graph_display graph_display = main_with_graph(view, commit_title_column, flags);
+	enum graph_display graph_display = quick_with_graph(view, commit_title_column, flags);
 	const char *pretty_custom_argv[] = {
-		GIT_MAIN_LOG(encoding_arg, commit_order_arg_with_graph(graph_display),
-			"%(mainargs)", "%(cmdlineargs)", "%(revargs)", "%(fileargs)",
-			show_notes_arg(), log_custom_pretty_arg())
+		GIT_QUICK_LOG(encoding_arg, commit_order_arg_with_graph(graph_display),
+			"%(cmdlineargs)", "%(quickargs)", show_notes_arg(), log_custom_pretty_arg())
 	};
 	const char *pretty_raw_argv[] = {
-		GIT_MAIN_LOG_RAW(encoding_arg, commit_order_arg_with_graph(graph_display),
-			"%(mainargs)", "%(cmdlineargs)", "%(revargs)", "%(fileargs)",
-			show_notes_arg())
+		GIT_QUICK_LOG_RAW(encoding_arg, commit_order_arg_with_graph(graph_display),
+			"%(cmdlineargs)", "%(quickargs)", show_notes_arg())
 	};
-	struct main_state *state = view->private;
-	const char **main_argv = pretty_custom_argv;
+	struct quick_state *state = view->private;
+	const char **quick_argv = pretty_custom_argv;
 	enum watch_trigger changes_triggers = WATCH_NONE;
 
 	if (opt_show_changes && (repo.is_inside_work_tree || *repo.worktree))
@@ -292,8 +289,8 @@ main_open(struct view *view, enum open_flags flags)
 
 	state->with_graph = graph_display != GRAPH_DISPLAY_NO;
 
-	if (opt_rev_args && main_check_argv(view, opt_rev_args))
-		main_argv = pretty_raw_argv;
+	if (opt_rev_args && quick_check_argv(view, opt_rev_args))
+		quick_argv = pretty_raw_argv;
 
 	if (state->with_graph) {
 		state->graph = init_graph(commit_title_column->opt.commit_title.graph);
@@ -307,7 +304,7 @@ main_open(struct view *view, enum open_flags flags)
 
 	{
 		/* This calls reset_view() so must be before adding changes commits. */
-		enum status_code code = begin_update(view, NULL, main_argv, flags);
+		enum status_code code = begin_update(view, NULL, quick_argv, flags);
 
 		if (code != SUCCESS)
 			return code;
@@ -319,19 +316,19 @@ main_open(struct view *view, enum open_flags flags)
 		watch_register(&view->watch, WATCH_HEAD | WATCH_REFS | changes_triggers);
 
 	if (changes_triggers)
-		main_check_index(view, state);
+		quick_check_index(view, state);
 
 	return SUCCESS;
 }
 
 void
-main_done(struct view *view)
+quick_done(struct view *view)
 {
-	struct main_state *state = view->private;
+	struct quick_state *state = view->private;
 	int i;
 
 	for (i = 0; i < view->lines; i++) {
-		struct commit *commit = view->line[i].data;
+		struct qcommit *commit = view->line[i].data;
 
 		free(commit->graph.symbols);
 	}
@@ -344,25 +341,25 @@ main_done(struct view *view)
 	free(state->reflog);
 }
 
-#define main_check_commit_refs(line)	!((line)->no_commit_refs)
-#define main_mark_no_commit_refs(line)	(((struct line *) (line))->no_commit_refs = 1)
+#define quick_check_commit_refs(line)	!((line)->no_commit_refs)
+#define quick_mark_no_commit_refs(line)	(((struct line *) (line))->no_commit_refs = 1)
 
 static inline const struct ref *
-main_get_commit_refs(const struct line *line, struct commit *commit)
+quick_get_commit_refs(const struct line *line, struct qcommit *commit)
 {
 	const struct ref *refs = NULL;
 
-	if (main_check_commit_refs(line) && !(refs = get_ref_list(commit->id)))
-		main_mark_no_commit_refs(line);
+	if (quick_check_commit_refs(line) && !(refs = get_ref_list(commit->id)))
+		quick_mark_no_commit_refs(line);
 
 	return refs;
 }
 
 bool
-main_get_column_data(struct view *view, const struct line *line, struct view_column_data *column_data)
+quick_get_column_data(struct view *view, const struct line *line, struct view_column_data *column_data)
 {
-	struct main_state *state = view->private;
-	struct commit *commit = line->data;
+	struct quick_state *state = view->private;
+	struct qcommit *commit = line->data;
 
 	column_data->author = commit->author;
 	column_data->date = &commit->time;
@@ -374,13 +371,13 @@ main_get_column_data(struct view *view, const struct line *line, struct view_col
 		column_data->graph_canvas = &commit->graph;
 	}
 
-	column_data->refs = main_get_commit_refs(line, commit);
+	column_data->refs = quick_get_commit_refs(line, commit);
 
 	return true;
 }
 
 static bool
-main_add_reflog(struct view *view, struct main_state *state, char *reflog)
+quick_add_reflog(struct view *view, struct quick_state *state, char *reflog)
 {
 	char *end = strchr(reflog, ' ');
 	int id_width;
@@ -408,21 +405,21 @@ main_add_reflog(struct view *view, struct main_state *state, char *reflog)
 
 /* Reads git log --pretty=raw output and parses it into the commit struct. */
 bool
-main_read(struct view *view, struct buffer *buf, bool force_stop)
+quick_read(struct view *view, struct buffer *buf, bool force_stop)
 {
-	struct main_state *state = view->private;
+	struct quick_state *state = view->private;
 	struct graph *graph = state->graph;
 	enum line_type type;
-	struct commit *commit = &state->current;
+	struct qcommit *commit = &state->current;
 	char *line;
 
 	if (!buf) {
-		main_flush_commit(view, commit);
+		quick_flush_commit(view, commit);
 
 		if (!force_stop && failed_to_load_initial_view(view))
 			die("No revisions match the given arguments.");
 		if (view->lines > 0) {
-			struct commit *last = view->line[view->lines - 1].data;
+			struct qcommit *last = view->line[view->lines - 1].data;
 
 			view->line[view->lines - 1].dirty = 1;
 			if (!last->author) {
@@ -448,7 +445,7 @@ main_read(struct view *view, struct buffer *buf, bool force_stop)
 		while (*line && !isalnum(*line))
 			line++;
 
-		main_flush_commit(view, commit);
+		quick_flush_commit(view, commit);
 
 		author = io_memchr(buf, line, 0);
 
@@ -460,7 +457,7 @@ main_read(struct view *view, struct buffer *buf, bool force_stop)
 				*parent_end = 0;
 		}
 
-		main_register_commit(view, &state->current, line, is_boundary);
+		quick_register_commit(view, &state->current, line, is_boundary);
 
 		if (author) {
 			char *title = io_memchr(buf, author, 0);
@@ -471,7 +468,7 @@ main_read(struct view *view, struct buffer *buf, bool force_stop)
 			if (title) {
 				char *notes = io_memchr(buf, title, 0);
 
-				main_add_commit(view, notes && *notes ? LINE_MAIN_ANNOTATED : LINE_MAIN_COMMIT,
+				quick_add_commit(view, notes && *notes ? LINE_MAIN_ANNOTATED : LINE_MAIN_COMMIT,
 						commit, title, false);
 			}
 		}
@@ -488,7 +485,7 @@ main_read(struct view *view, struct buffer *buf, bool force_stop)
 
 	switch (type) {
 	case LINE_PP_REFLOG:
-		if (!main_add_reflog(view, state, line + STRING_SIZE("Reflog: ")))
+		if (!quick_add_reflog(view, state, line + STRING_SIZE("Reflog: ")))
 			return false;
 		break;
 
@@ -531,14 +528,14 @@ main_read(struct view *view, struct buffer *buf, bool force_stop)
 			break;
 		if (*state->reflogmsg)
 			line = state->reflogmsg;
-		main_add_commit(view, LINE_MAIN_COMMIT, commit, line, false);
+		quick_add_commit(view, LINE_MAIN_COMMIT, commit, line, false);
 	}
 
 	return true;
 }
 
 enum request
-main_request(struct view *view, enum request request, struct line *line)
+quick_request(struct view *view, enum request request, struct line *line)
 {
 	enum open_flags flags = (request != REQ_VIEW_DIFF &&
 				 (view_is_displayed(view) ||
@@ -575,7 +572,7 @@ main_request(struct view *view, enum request request, struct line *line)
 		break;
 
 	case REQ_PARENT:
-		if (push_view_history_state(&main_view_history, &view->pos, &view->pos.lineno)) {
+		if (push_view_history_state(&quick_view_history, &view->pos, &view->pos.lineno)) {
 			goto_id(view, "%(commit)^", true, false);
 		} else {
 			report("Failed to save current view state");
@@ -583,7 +580,7 @@ main_request(struct view *view, enum request request, struct line *line)
 		break;
 
 	case REQ_BACK:
-		if (pop_view_history_state(&main_view_history, &view->pos, NULL)) {
+		if (pop_view_history_state(&quick_view_history, &view->pos, NULL)) {
 			redraw_view(view);
 		} else {
 			report("Already at start of history");
@@ -595,11 +592,6 @@ main_request(struct view *view, enum request request, struct line *line)
 		find_merge(view, request);
 		break;
 
-	case REQ_VIEW_QUICK:
-		flags |= OPEN_RELOAD;
-		open_quick_view(view, flags);
-		break;
-
 	default:
 		return request;
 	}
@@ -608,16 +600,16 @@ main_request(struct view *view, enum request request, struct line *line)
 }
 
 void
-main_select(struct view *view, struct line *line)
+quick_select(struct view *view, struct line *line)
 {
-	struct commit *commit = line->data;
+	struct qcommit *commit = line->data;
 
 	if (line->type == LINE_STAT_STAGED || line->type == LINE_STAT_UNSTAGED || line->type == LINE_STAT_UNTRACKED) {
 		string_ncopy(view->ref, commit->title, strlen(commit->title));
 		status_stage_info(view->env->status, line->type, NULL);
 	} else {
-		struct main_state *state = view->private;
-		const struct ref *ref = main_get_commit_refs(line, commit);
+		struct quick_state *state = view->private;
+		const struct ref *ref = quick_get_commit_refs(line, commit);
 
 		if (state->reflogs) {
 			assert(state->reflogs >= line->lineno);
@@ -632,24 +624,24 @@ main_select(struct view *view, struct line *line)
 	string_copy_rev(view->env->commit, commit->id);
 }
 
-static struct view_ops main_ops = {
-	"commit",
+static struct view_ops quick_ops = {
+	"quick commit",
 	argv_env.head,
 	VIEW_SEND_CHILD_ENTER | VIEW_FILE_FILTER | VIEW_REV_FILTER | VIEW_LOG_LIKE | VIEW_REFRESH,
-	sizeof(struct main_state),
-	main_open,
-	main_read,
+	sizeof(struct quick_state),
+	quick_open,
+	quick_read,
 	view_column_draw,
-	main_request,
+	quick_request,
 	view_column_grep,
-	main_select,
-	main_done,
+	quick_select,
+	quick_done,
 	view_column_bit(AUTHOR) | view_column_bit(COMMIT_TITLE) |
 		view_column_bit(DATE) |	view_column_bit(ID) |
 		view_column_bit(LINE_NUMBER),
-	main_get_column_data,
+	quick_get_column_data,
 };
 
-DEFINE_VIEW(main);
+DEFINE_VIEW(quick);
 
 /* vim: set ts=8 sw=8 noexpandtab: */

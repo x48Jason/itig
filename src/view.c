@@ -1774,6 +1774,7 @@ append_line_format(struct view *view, struct line *line, const char *fmt, ...)
 
 /* Included last to not pollute the rest of the file. */
 #include "tig/main.h"
+#include "tig/quick.h"
 #include "tig/diff.h"
 #include "tig/log.h"
 #include "tig/reflog.h"

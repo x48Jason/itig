@@ -187,6 +187,7 @@ following variables.
 |%(blameargs)		|Options from 'blame-options' used by the blame view.
 |%(logargs)		|Options from 'log-options' used by the log view.
 |%(mainargs)		|Options from 'main-options' used by the main view.
+|%(quickargs)		|Options from 'quick-options' used by the quick view.
 |%(prompt)		|Prompt for the argument value. Optionally specify a
 			 custom prompt using `"%(prompt Enter branch name: )"`
 |%(text)		|The text of the currently selected line.

@@ -43,6 +43,7 @@
 #include "tig/log.h"
 #include "tig/reflog.h"
 #include "tig/main.h"
+#include "tig/quick.h"
 #include "tig/pager.h"
 #include "tig/refs.h"
 #include "tig/stage.h"

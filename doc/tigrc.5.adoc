@@ -175,6 +175,13 @@ The following variables can be set:
 	git-log(1) command used by the main view. Options can be overridden by
 	command line options.
 
+'quick-options' (string)::
+
+	A string to specify the rev range that will be passed to the git-log(1)
+	command by the quick view. Register specification can be used so that
+	the rev range can take the register value at runtime. Options can be
+	overridden by command line options.
+
 'reference-format' (string)::
 
 	A space-separated string of format strings used for formatting reference
@@ -740,6 +747,7 @@ following variable names, which are substituted before commands are run:
 |%(blameargs)		|Options from 'blame-options' used by the blame view.
 |%(logargs)		|Options from 'log-options' used by the log view.
 |%(mainargs)		|Options from 'main-options' used by the main view.
+|%(quickargs)		|Options from 'quick-options' used by the quick view.
 |%(prompt)		|Prompt for the argument value. Optionally specify a
 			 custom prompt using `"%(prompt Enter branch name: )"`
 |%(text)		|The text of the currently selected line.
