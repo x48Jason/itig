@@ -22,6 +22,7 @@
 #include "tig/git.h"
 #include "tig/diff.h"
 #include "tig/main.h"
+#include "tig/quick.h"
 
 /*
  * Blame backend
@@ -459,6 +460,11 @@ blame_request(struct view *view, enum request request, struct line *line)
 	case REQ_VIEW_MAIN:
 		string_copy_rev(view->env->goto_id, view->env->commit);
 		open_main_view(view, OPEN_RELOAD);
+		break;
+
+	case REQ_VIEW_QUICK:
+		flags |= OPEN_RELOAD;
+		open_quick_view(view, flags);
 		break;
 
 	default:
