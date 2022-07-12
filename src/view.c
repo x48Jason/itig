@@ -704,7 +704,7 @@ update_view_title(struct view *view)
 		wbkgdset(window, get_view_attr(view, LINE_TITLE_BLUR));
 
 	werase(window);
-	mvwprintw(window, 0, 0, "[%s]", view->name);
+	mvwprintw(window, 0, 0, "[%s][%s]", view->name, view->ref_full_name ? : "");
 
 	if (*view->ref) {
 		wprintw(window, " %s", view->ref);
