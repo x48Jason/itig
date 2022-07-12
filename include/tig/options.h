@@ -59,6 +59,7 @@ typedef struct view_column *view_settings;
 	_(mailmap,			bool,			VIEW_DIFF_LIKE | VIEW_LOG_LIKE) \
 	_(main_options,			const char **,		VIEW_LOG_LIKE) \
 	_(quick_options,		const char **,		VIEW_LOG_LIKE) \
+	_(refs_options,			const char **,		VIEW_LOG_LIKE) \
 	_(main_view,			view_settings,		VIEW_NO_FLAGS) \
 	_(quick_view,			view_settings,		VIEW_NO_FLAGS) \
 	_(mouse,			bool,			VIEW_NO_FLAGS) \

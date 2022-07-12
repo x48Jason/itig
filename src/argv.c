@@ -507,6 +507,10 @@ argv_format(struct argv_env *argv_env, const char ***dst_argv, const char *src_a
 			if (!format_append_argv(&format, dst_argv, opt_quick_options))
 				break;
 
+		} else if (!strcmp(arg, "%(refsargs)")) {
+			if (!format_append_argv(&format, dst_argv, opt_refs_options))
+				break;
+
 		} else if (!strcmp(arg, "%(cmdlineargs)")) {
 			if (!format_append_argv(&format, dst_argv, opt_cmdline_args))
 				break;
