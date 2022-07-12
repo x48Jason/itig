@@ -101,6 +101,7 @@ struct view_column {
 
 struct view {
 	const char *name;	/* View name */
+	char *ref_full_name;
 
 	struct view_ops *ops;	/* View operations */
 	struct argv_env *env;	/* View variables. */
@@ -162,7 +163,7 @@ struct view {
 	void *private;
 };
 
-#define DEFINE_VIEW(name) struct view name ##_view = { #name, &name##_ops, &argv_env }
+#define DEFINE_VIEW(name) struct view name ##_view = { #name, NULL, &name##_ops, &argv_env }
 
 enum open_flags {
 	OPEN_DEFAULT = 0,	/* Use default view switching. */
