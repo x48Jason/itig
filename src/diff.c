@@ -30,7 +30,7 @@ diff_open(struct view *view, enum open_flags flags)
 			"--patch-with-stat", use_mailmap_arg(),
 			show_notes_arg(), diff_context_arg(), ignore_space_arg(),
 			DIFF_ARGS, "%(cmdlineargs)", "--no-color", word_diff_arg(),
-			"%(commit)", "--", "%(fileargs)", NULL
+			"%(commit)", NULL
 	};
 	enum status_code code;
 
