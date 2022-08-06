@@ -326,7 +326,10 @@ view_driver(struct view *view, enum request request)
 		break;
 
 	case REQ_TOGGLE_BP_MARK:
-		bplist_toggle_rev(&global_bplist, argv_env.commit);
+		if (string_rev_is_null(argv_env.commit))
+			report("can't put null commit into bplist");
+		else
+			bplist_toggle_rev(&global_bplist, argv_env.commit);
 		break;
 
 	case REQ_STOP_LOADING:
