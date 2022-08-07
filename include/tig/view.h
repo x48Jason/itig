@@ -248,6 +248,8 @@ struct view_ops {
 	unsigned long column_bits;
 	/* Extract line information. */
 	bool (*get_column_data)(struct view *view, const struct line *line, struct view_column_data *column_data);
+	/* Get selection range */
+	bool (*get_select_range)(struct view *view, long *from, long *to);
 };
 
 /*

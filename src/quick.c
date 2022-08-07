@@ -130,6 +130,25 @@ quick_request(struct view *view, enum request request, struct line *line)
 	return REQ_NONE;
 }
 
+static bool quick_get_select_range(struct view *view, long *from, long *to)
+{
+	struct select_range *r = &view->sel_range;
+
+	if (r->state == select_in_progress) {
+		r->end = view->pos.lineno;
+		r->state = select_done;
+	}
+	if (r->state == select_done) {
+		*from = (r->start > r->end) ? r->start : r->end;
+		*to = (r->start < r->end) ? r->start : r->end;
+		return true;
+	}
+
+	*from = view->lines - 1;
+	*to = 0;
+	return true;
+}
+
 static struct view_ops quick_ops = {
 	"quick commit",
 	argv_env.head,
@@ -146,6 +165,7 @@ static struct view_ops quick_ops = {
 		view_column_bit(DATE) |	view_column_bit(ID) |
 		view_column_bit(LINE_NUMBER),
 	main_get_column_data,
+	quick_get_select_range,
 };
 
 DEFINE_VIEW(quick);

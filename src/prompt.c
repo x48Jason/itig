@@ -1275,13 +1275,27 @@ exec_run_request(struct view *view, struct run_request *req)
 	if (!req->flags.on_each_select)
 		return do_exec_run_request(view, req);
 
-	r = &view->sel_range;
-	if (r->state != select_done)
-		return REQ_NONE;
-
-	from = (r->start > r->end) ? r->start : r->end;
-	to = (r->start < r->end) ? r->start : r->end;
+	if (view->ops->get_select_range) {
+		if (!view->ops->get_select_range(view, &from, &to)) {
+			report("failed to get select range");
+			return REQ_NONE;
+		}
+	} else {
+		r = &view->sel_range;
+		if (r->state == select_in_progress) {
+			r->end = view->pos.lineno;
+			r->state = select_done;
+		}
+		if (r->state != select_done) {
+			report("no select range");
+			return REQ_NONE;
+		}
+	
+		from = (r->start > r->end) ? r->start : r->end;
+		to = (r->start < r->end) ? r->start : r->end;
+	}
 	io_trace("%s: from:%ld, to:%ld, env commit: %s\n", __func__, from, to, view->env->commit);
+
 	strncpy(saved_commit, view->env->commit, SIZEOF_STR);
 	for (n = from; n >= to; n--) {
 		struct view_column_data column_data;
