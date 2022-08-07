@@ -132,7 +132,7 @@ toggle_option(struct view *view)
 		return;
 
 	toggle_argv[1] = menu[i].data;
-	run_prompt_command(view, toggle_argv);
+	run_prompt_command(view, toggle_argv, false);
 }
 
 
@@ -962,7 +962,7 @@ main(int argc, const char *argv[])
 	if (getenv("TIG_SCRIPT")) {
 		const char *script_command[] = { "script", getenv("TIG_SCRIPT"), NULL };
 
-		run_prompt_command(NULL, script_command);
+		run_prompt_command(NULL, script_command, true);
 	}
 
 	while (view_driver(display[current_view], request)) {

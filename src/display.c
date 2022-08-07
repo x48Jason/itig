@@ -11,6 +11,7 @@
  * GNU General Public License for more details.
  */
 
+#include "tig/request.h"
 #include "tig/tig.h"
 #include "tig/argv.h"
 #include "tig/io.h"
@@ -22,6 +23,7 @@
 #include "tig/watch.h"
 #include "tig/registers.h"
 #include "tig/bplist.h"
+#include "tig/prompt.h"
 
 #define MAX_KEYS 2000
 
@@ -577,7 +579,8 @@ report(const char *msg, ...)
 		int retval;
 
 		FORMAT_BUFFER(buf, sizeof(buf), msg, retval, true);
-		die("%s", buf);
+		io_trace("report: %s\n", buf);
+		return;
 	}
 
 	va_start(args, msg);
@@ -751,6 +754,33 @@ read_script(struct key *key)
 	if (code != SUCCESS)
 		die("Error reading script: %s", get_status_message(code));
 	return true;
+}
+
+enum request
+run_script_loop(struct view *view)
+{
+	const char *argv[SIZEOF_ARG] = { NULL };
+	struct buffer buf;
+	int argc = 0;
+	char *cmd;
+
+	if (!is_script_executing())
+		return REQ_NONE;
+
+	while (io_get(&script_io, &buf, '\n', true)) {
+		if (!*buf.data)
+			continue;
+		cmd = buf.data + 1;
+		if (!*cmd)
+			continue;
+		io_trace("run_script_loop: cmd: %s\n", cmd);
+		if (!argv_from_string(argv, &argc, cmd))
+			break;
+		run_prompt_command(view, argv, true);
+	}
+	io_done(&script_io);
+
+	return REQ_NONE;
 }
 
 int

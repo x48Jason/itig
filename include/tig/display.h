@@ -59,6 +59,7 @@ void enable_mouse(bool enable);
 
 enum status_code open_script(const char *path);
 bool is_script_executing(void);
+enum request run_script_loop(struct view *view);
 
 #define get_cursor_pos(cursor_y, cursor_x) getyx(newscr, cursor_y, cursor_x)
 #define set_cursor_pos(cursor_y, cursor_x) wmove(newscr, cursor_y, cursor_x)

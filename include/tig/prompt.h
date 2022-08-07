@@ -51,7 +51,7 @@ void prompt_init(void);
 bool prompt_yesno(const char *prompt);
 bool prompt_menu(const char *prompt, const struct menu_item *items, int *selected);
 
-enum request run_prompt_command(struct view *view, const char *argv[]);
+enum request run_prompt_command(struct view *view, const char *argv[], bool blocking);
 enum request open_prompt(struct view *view);
 enum request exec_run_request(struct view *view, struct run_request *req);
 

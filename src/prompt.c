@@ -968,7 +968,7 @@ parse_set_register(char *key, const char ***dst_argv, const char **src_argv)
 }
 
 enum request
-run_prompt_command(struct view *view, const char *argv[])
+run_prompt_command(struct view *view, const char *argv[], bool blocking)
 {
 	enum request request;
 	const char *cmd = argv[0];
@@ -1118,7 +1118,7 @@ run_prompt_command(struct view *view, const char *argv[])
 		// argv may be allocated and mutations below will cause
 		// free() to error out so backup and restore. :(
 		const char *cmd = argv[1];
-		struct run_request req = { view->keymap, {0}, argv + 1 };
+		struct run_request req = { view ? view->keymap : NULL, {0}, argv + 1 };
 		enum status_code code = parse_run_request_flags(&req.flags, argv + 1);
 
 		if (code != SUCCESS) {
@@ -1150,7 +1150,11 @@ run_prompt_command(struct view *view, const char *argv[])
 
 		if (code != SUCCESS)
 			report("%s", get_status_message(code));
-		return REQ_NONE;
+
+		if (blocking)
+			return run_script_loop(view);
+		else
+			return REQ_NONE;
 
 	} else {
 		struct key key = {{0}};
@@ -1158,11 +1162,13 @@ run_prompt_command(struct view *view, const char *argv[])
 		enum view_flag flags = VIEW_NO_FLAGS;
 
 		/* Try :<key> */
-		key.modifiers.multibytes = 1;
-		string_ncopy(key.data.bytes, cmd, cmdlen);
-		request = get_keybinding(view->keymap, &key, 1, NULL);
-		if (request != REQ_UNKNOWN)
-			return request;
+		if (view) {
+			key.modifiers.multibytes = 1;
+			string_ncopy(key.data.bytes, cmd, cmdlen);
+			request = get_keybinding(view->keymap, &key, 1, NULL);
+			if (request != REQ_UNKNOWN)
+				return request;
+		}
 
 		/* Try :<command> */
 		request = get_request(cmd);
@@ -1214,7 +1220,7 @@ do_exec_run_request(struct view *view, struct run_request *req)
 
 	if (!argv_to_string(req->argv, cmd, sizeof(cmd), " ")
 	    || !argv_from_string_no_quotes(req_argv, &req_argc, cmd)
-	    || !argv_format(view->env, &argv, req_argv, argv_flag_file_filter | argv_flag_rev_filter)
+	    || !argv_format(view ? view->env : &argv_env, &argv, req_argv, argv_flag_file_filter | argv_flag_rev_filter)
 	    || !argv) {
 		report("Failed to format arguments");
 		return REQ_NONE;
@@ -1223,7 +1229,7 @@ do_exec_run_request(struct view *view, struct run_request *req)
 	io_trace_argv("do_exec_run_request", argv);
 
 	if (req->flags.internal) {
-		request = run_prompt_command(view, argv);
+		request = run_prompt_command(view, argv, false);
 
 	} else {
 		confirmed = !req->flags.confirm;
@@ -1257,7 +1263,7 @@ do_exec_run_request(struct view *view, struct run_request *req)
 		else if (req_flags.exit)
 			request = REQ_QUIT;
 
-		else if (!req_flags.internal && watch_dirty(&view->watch))
+		else if (!req_flags.internal && view && watch_dirty(&view->watch))
 			request = REQ_REFRESH;
 
 	}
@@ -1337,7 +1343,7 @@ open_prompt(struct view *view)
 		return REQ_NONE;
 	}
 
-	return run_prompt_command(view, argv);
+	return run_prompt_command(view, argv, false);
 }
 
 /* vim: set ts=8 sw=8 noexpandtab: */
