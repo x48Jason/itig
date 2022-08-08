@@ -35,6 +35,8 @@ int bplist_write(struct bplist *bpl, const char *fn);
 
 int bplist_import(struct bplist *bpl, char *buf);
 
+bool global_bplist_check_saved();
+
 void init_bplist(void);
 
 #endif

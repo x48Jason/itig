@@ -374,7 +374,9 @@ view_driver(struct view *view, enum request request)
 		}
 		/* Fall-through */
 	case REQ_QUIT:
-		return false;
+		if (global_bplist_check_saved())
+			return false;
+		break;
 
 	default:
 		report("Unknown key, press %s for help",

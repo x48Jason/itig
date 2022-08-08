@@ -17,6 +17,7 @@
 #include "tig/io.h"
 #include "tig/argv.h"
 #include "tig/bplist.h"
+#include "tig/prompt.h"
 
 /*
  * BP is short for BackPort. When you need to do a lot of backporting it
@@ -66,6 +67,7 @@ struct bplist {
 	struct line **lines;
 	size_t nlines;
 	size_t capacity;
+	bool saved;
 };
 
 /*
@@ -312,6 +314,8 @@ bplist_add_rev(struct bplist *bpl, const char *rev, const char *sline)
 	memcpy(kv->rev, rev, SIZEOF_REV);
 	if (!string_map_put(&bpl->commits, kv->rev, kv))
 		die("string_map_put");
+
+	bpl->saved = false;
 }
 
 /*
@@ -344,6 +348,8 @@ bplist_rem_rev(struct bplist *bpl, const char *rev)
 	free(kv->line);
 	kv->line = NULL;
 	free(kv);
+
+	bpl->saved = false;
 }
 
 void bplist_rem_all(struct bplist *bpl)
@@ -366,6 +372,8 @@ void bplist_rem_all(struct bplist *bpl)
 		bpl->lines[i] = NULL;
 	}
 	bpl->nlines = 0;
+
+	bpl->saved = false;
 }
 
 void bplist_to_argv(struct bplist *bpl, const char ***argv)
@@ -395,6 +403,7 @@ bplist_init(struct bplist *bpl, size_t capacity, const char *fn)
 	};
 	bpl->capacity = capacity;
 	bpl->lines = calloc(bpl->capacity, sizeof(*bpl->lines));
+	bpl->saved = true;
 }
 
 /*
@@ -428,6 +437,9 @@ bplist_read(struct bplist *bpl, const char *fn)
 	bpl->fn = strdup(fn);
 	if (!bpl->fn)
 		die("OOM");
+
+	bpl->saved = false;
+
 	return 0;
 }
 
@@ -489,7 +501,16 @@ bplist_write(struct bplist *bpl, const char *fn)
 		return rc;
 	}
 
+	bpl->saved = true;
+
 	return 0;
+}
+
+bool
+global_bplist_check_saved()
+{
+	return global_bplist.saved ||
+	    prompt_yesno("bplist not saved, still want to quit?");
 }
 
 /*
