@@ -86,8 +86,10 @@ refs_request(struct view *view, enum request request, struct line *line)
 		main_view.ref_full_name = strdup(ref->name);
 		if (!argv_format(main_view.env, &main_view.argv, all_references_argv, 0))
 			report("Failed to format argument");
-		else
+		else {
+			io_trace_argv("refs_request", main_view.argv);
 			open_main_view(view, flags | OPEN_PREPARED);
+		}
 		return REQ_NONE;
 	}
 	default:

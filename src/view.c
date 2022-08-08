@@ -662,6 +662,8 @@ begin_update(struct view *view, const char *dir, const char **argv, enum open_fl
 		view->dir = dir;
 		if (!argv_format(view->env, &view->argv, argv, flags))
 			return error("Failed to format %s arguments", view->name);
+		else
+			io_trace_argv("begin_update", view->argv);
 	}
 
 	if (view->argv && view->argv[0] &&
