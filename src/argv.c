@@ -366,6 +366,14 @@ format_append_arg(struct format_context *format, const char ***dst_argv, const c
 	memset(format->buf, 0, sizeof(format->buf));
 	format->bufpos = 0;
 
+	if (*arg == '~') {
+		char *buf = alloca(SIZEOF_STR);
+		if (!buf)
+			die("failed to malloc");
+		path_expand(buf, SIZEOF_STR, arg);
+		arg = buf;
+	}
+
 	while (arg) {
 		const char *var = strstr(arg, "%(");
 		const char *esc = strstr(arg, "%%");
