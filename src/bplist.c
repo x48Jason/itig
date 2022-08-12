@@ -15,6 +15,7 @@
 #include "tig/map.h"
 #include "tig/repo.h"
 #include "tig/io.h"
+#include "tig/argv.h"
 #include "tig/bplist.h"
 
 /*
@@ -55,6 +56,7 @@ struct cval {
 
 struct line {
 	char *s;
+	char *rev;
 	long cdate;
 };
 
@@ -92,7 +94,7 @@ commits_hash(const void *v)
 /*
  * Expand an abbrev rev to a full one
  */
-static int
+static bool
 expand_rev(char *dst, const char *rev)
 {
 	const char *rev_argv[] = { "git", "rev-parse", rev, NULL };
@@ -100,9 +102,11 @@ expand_rev(char *dst, const char *rev)
 
 	ok = io_run_buf(rev_argv, dst, SIZEOF_REV, repo.cdup, true);
 
-	if (!ok)
-		die("io_run_buf <%s>", rev);
-	return 0;
+	if (!ok) {
+		io_trace("io_run_buf failed: <%s>", rev);
+		return false;
+	}
+	return true;
 }
 
 /*
@@ -148,34 +152,23 @@ get_cdate(const char *fullrev)
 	return (long)atol(buf);
 }
 
-/*
- * Helper for sorting struct lines array
- */
-static int
-line_cmp(const void *pa, const void *pb)
-{
-	struct line * const *a = pa;
-	struct line * const *b = pb;
-
-	return (*a)->cdate - (*b)->cdate;
-}
-
-static void
-sort_lines(struct bplist *bpl)
-{
-	qsort(bpl->lines, bpl->nlines, sizeof(*bpl->lines), line_cmp);
-}
-
 static struct line *
-_add_line(struct bplist *bpl, char *s, long cdate)
+_add_line(struct bplist *bpl, char *s, const char *rev)
 {
 	struct line *line;
+	long cdate;
+
+	if (rev)
+		cdate = get_cdate(rev);
+	else
+		cdate = 0;
 
 	line = calloc(1, sizeof(*line));
 	if (!line)
 		die("OOM");
 
 	line->s = s;
+	line->rev = strdup(rev);
 	line->cdate = cdate;
 
 	if (bpl->nlines >= bpl->capacity) {
@@ -236,7 +229,7 @@ bplist_has_rev(struct bplist *bpl, const char *rev)
  * commit is added to the bplist, otherwise it will just get appended
  * to the bplist lines
  */
-void
+bool
 bplist_add_line(struct bplist *bpl, const char *line)
 {
 	char rev[SIZEOF_REV] = {0};
@@ -244,14 +237,13 @@ bplist_add_line(struct bplist *bpl, const char *line)
 	const char *s = line;
 	const char *beg, *end;
 	size_t len;
-	int rc;
 
 	while (*s && isspace(*s))
 		s++;
 
 	if (!*s) {
-		_add_line(bpl, strdup(line), 0);
-		return;
+		io_trace("bplist_add_line: empty line");
+		return false;
 	}
 
 	beg = s;
@@ -263,25 +255,25 @@ bplist_add_line(struct bplist *bpl, const char *line)
 	len = end - beg;
 
 	if (len < 5 || len > SIZEOF_REV-1) {
-		_add_line(bpl, strdup(line), 0);
-		return;
+		io_trace("bplist_add_line: incorrect sha1 hash length: %d", len);
+		return false;
 	}
 
 	memcpy(rev, beg, len);
-	rc = expand_rev(full, rev);
-	if (rc) {
-		_add_line(bpl, strdup(line), 0);
-		return;
+	if (!expand_rev(full, rev)) {
+		io_trace("bplist_add_line: failed to expand rev");
+		return false;
 	}
 
-	bplist_add_rev(bpl, full, line);
+	bplist_add_rev(bpl, full, NULL);
+	return true;
 }
 
 /*
  * Adds a commit to a bplist. If line is NULL, a commit line will be
  * generated and added the bplist lines
  */
-int
+void
 bplist_add_rev(struct bplist *bpl, const char *rev, const char *sline)
 {
 	struct cval *kv;
@@ -291,12 +283,7 @@ bplist_add_rev(struct bplist *bpl, const char *rev, const char *sline)
 
 	kv = string_map_get(&bpl->commits, rev);
 	if (kv)
-		return 0;
-
-
-	line = calloc(1, sizeof(*line));
-	if (!line)
-		die("OOM");
+		return;
 
 	if (sline) {
 		final = strdup(sline);
@@ -313,7 +300,9 @@ bplist_add_rev(struct bplist *bpl, const char *rev, const char *sline)
 		free(title);
 	}
 
-	line = _add_line(bpl, final, get_cdate(rev));
+	io_trace("bplist add: %s\n", final);
+
+	line = _add_line(bpl, final, rev);
 
 	kv = calloc(1, sizeof(*kv));
 	if (!kv)
@@ -323,8 +312,6 @@ bplist_add_rev(struct bplist *bpl, const char *rev, const char *sline)
 	memcpy(kv->rev, rev, SIZEOF_REV);
 	if (!string_map_put(&bpl->commits, kv->rev, kv))
 		die("string_map_put");
-
-	return 0;
 }
 
 /*
@@ -334,7 +321,6 @@ void
 bplist_rem_rev(struct bplist *bpl, const char *rev)
 {
 	struct cval *kv;
-	struct line *line;
 	size_t i;
 
 	kv = string_map_remove(&bpl->commits, rev);
@@ -353,9 +339,44 @@ bplist_rem_rev(struct bplist *bpl, const char *rev)
 	}
 	free(kv->line->s);
 	kv->line->s = NULL;
+	free(kv->line->rev);
+	kv->line->rev = NULL;
 	free(kv->line);
 	kv->line = NULL;
 	free(kv);
+}
+
+void bplist_rem_all(struct bplist *bpl)
+{
+	int i;
+
+	for (i = 0; i < bpl->nlines; i++) {
+		struct cval *kv = string_map_remove(&bpl->commits, bpl->lines[i]->rev);
+		if (!kv)
+			die("failed to find kv for bplist entry: %s", bpl->lines[i]->rev);
+
+		free(kv->line->s);
+		kv->line->s = NULL;
+		free(kv->line->rev);
+		kv->line->rev = NULL;
+		free(kv->line);
+		kv->line = NULL;
+		free(kv);
+
+		bpl->lines[i] = NULL;
+	}
+	bpl->nlines = 0;
+}
+
+void bplist_to_argv(struct bplist *bpl, const char ***argv)
+{
+	int i;
+
+	for (i = 0; i < bpl->nlines; i++) {
+		struct line *line = bpl->lines[i];
+		io_trace("bplist to argv: %s\n", line->rev);
+		argv_append(argv, line->rev);
+	}
 }
 
 /*
@@ -399,6 +420,7 @@ bplist_read(struct bplist *bpl, const char *fn)
 		if (!s && feof(fh)) {
 			break;
 		}
+		io_trace("bplist_read: add line: %s\n");
 		bplist_add_line(bpl, s);
 	}
 	fclose(fh);
@@ -407,6 +429,29 @@ bplist_read(struct bplist *bpl, const char *fn)
 	if (!bpl->fn)
 		die("OOM");
 	return 0;
+}
+
+int
+bplist_import(struct bplist *bpl, char *buf)
+{
+	char *p, *q;
+	int count = 0;
+
+	p = buf;
+	while (1) {
+		q = strchr(p, '\n');
+
+		if (q == NULL)
+			break;
+		*q = '\0';
+		io_trace("bplist_import(from buf): add line: %s\n", p);
+		if (bplist_add_line(bpl, p))
+			count++;
+		p = q + 1;
+	}
+	if (*p)
+		bplist_add_line(bpl, p);
+	return count;
 }
 
 /*
@@ -426,8 +471,6 @@ bplist_write(struct bplist *bpl, const char *fn)
 		return rc;
 	}
 
-	sort_lines(bpl);
-
 	for (i = 0; i < bpl->nlines; i++) {
 		const char *s;
 		size_t len;
@@ -435,6 +478,7 @@ bplist_write(struct bplist *bpl, const char *fn)
 		s = bpl->lines[i]->s;
 		s = s ? s : "";
 		len = strlen(s);
+		io_trace(len > 0 && s[len-1] == '\n' ? "%s" : "%s\n", s);
 		fprintf(fh, len > 0 && s[len-1] == '\n' ? "%s" : "%s\n", s);
 	}
 
