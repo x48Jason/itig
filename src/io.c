@@ -350,14 +350,14 @@ io_exec(struct io *io, enum io_type type, const char *dir, char * const env[], c
 	if ((type == IO_RD || type == IO_RP || type == IO_WR) && pipe(pipefds) < 0) {
 		io->error = errno;
 		return false;
-	} else if (type == IO_AP) {
+	} else if (type == IO_AP || type == IO_AP_NO_CLOSE) {
 		pipefds[1] = custom;
 	}
 
 	if ((io->pid = fork())) {
 		if (io->pid == -1)
 			io->error = errno;
-		if (pipefds[!(type == IO_WR)] != -1)
+		if (pipefds[!(type == IO_WR)] != -1 && type != IO_AP_NO_CLOSE)
 			close(pipefds[!(type == IO_WR)]);
 		if (io->pid != -1) {
 			io->pipe = pipefds[!!(type == IO_WR)];
@@ -370,7 +370,8 @@ io_exec(struct io *io, enum io_type type, const char *dir, char * const env[], c
 			int readfd  = type == IO_WR ? pipefds[0]
 				    : type == IO_RP ? custom
 				    : devnull;
-			int writefd = (type == IO_RD || type == IO_RP || type == IO_AP)
+			int writefd = (type == IO_RD || type == IO_RP ||
+				       type == IO_AP || type == IO_AP_NO_CLOSE)
 				    ? pipefds[1] : devnull;
 			int errorfd = open_trace(devnull, argv);
 
@@ -446,6 +447,12 @@ bool
 io_run_append(const char **argv, int fd)
 {
 	return io_complete(IO_AP, argv, NULL, fd);
+}
+
+bool
+io_run_append_no_close(const char **argv, int fd)
+{
+	return io_complete(IO_AP_NO_CLOSE, argv, NULL, fd);
 }
 
 bool

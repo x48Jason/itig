@@ -64,6 +64,7 @@ enum io_type {
 	IO_RP,			/* Read only fork+exec IO with input pipe. */
 	IO_WR,			/* Write only fork+exec IO. */
 	IO_AP,			/* Append fork+exec output to file. */
+	IO_AP_NO_CLOSE,		/* Append fork+exec output to file but dont close file. */
 };
 
 struct io {
@@ -89,6 +90,7 @@ bool io_run(struct io *io, enum io_type type, const char *dir, char * const env[
 bool io_run_bg(const char **argv, const char *dir);
 bool io_run_fg(const char **argv, const char *dir);
 bool io_run_append(const char **argv, int fd);
+bool io_run_append_no_close(const char **argv, int fd);
 bool io_eof(struct io *io);
 int io_error(struct io *io);
 char * io_strerror(struct io *io);
