@@ -649,12 +649,55 @@ io_read_buf(struct io *io, char buf[], size_t bufsize, bool allow_empty)
 	return io_done(io) && (result.data || allow_empty);
 }
 
+char *
+io_read_alloc_buf(struct io *io)
+{
+	struct buffer result = {0};
+	size_t buflen = SIZEOF_STR;
+	size_t occupied = 0;
+	char *buf;
+
+	buf = malloc(buflen);
+	if (!buf)
+		die("failed to malloc");
+
+	while (io_get(io, &result, '\n', true)) {
+		size_t len;
+		result.data = string_trim(result.data);
+		len = strlen(result.data);
+		if (buflen - occupied < len + 2) {
+			buflen *= 2;
+			buf = realloc(buf, buflen);
+			if (!buf)
+				die("failed to realloc");
+		}
+		string_ncopy_do(buf + occupied, buflen - occupied,
+	   			result.data, len);
+		occupied += len;
+		buf[occupied] = '\n';
+		occupied++;
+	}
+	buf[occupied] = '\0';
+	io_done(io);
+	return buf;
+}
+
 bool
 io_run_buf(const char **argv, char buf[], size_t bufsize, const char *dir, bool allow_empty)
 {
 	struct io io;
 
 	return io_run(&io, IO_RD, dir, NULL, argv) && io_read_buf(&io, buf, bufsize, allow_empty);
+}
+
+char *
+io_run_alloc_buf(const char **argv, const char *dir)
+{
+	struct io io;
+
+	if (!io_run(&io, IO_RD, dir, NULL, argv))
+		return NULL;
+	return io_read_alloc_buf(&io);
 }
 
 bool
