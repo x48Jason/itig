@@ -20,6 +20,7 @@
 #include "tig/prompt.h"
 #include "tig/pager.h"
 #include "tig/types.h"
+#include "tig/bplist.h"
 
 #ifdef HAVE_READLINE
 #include <readline/readline.h>
@@ -270,6 +271,8 @@ readline_action_generator(const char *text, int state)
 		"exec",
 		"echo",
 		"set-register",
+		"read-bplist",
+		"write-bplist",
 #define REQ_GROUP(help)
 #define REQ_(req, help)	#req
 		REQ_INFO,
@@ -1075,6 +1078,16 @@ run_prompt_command(struct view *view, const char *argv[])
 			/* this message would be nicer if the key was distinguished in color */
 			report("Register %c %s", key, value);
 
+	} else if (!strcmp(cmd, "read-bplist")) {
+		if (!bplist_read(&global_bplist, argv[1]))
+			report("bplist read from %s", argv[1]);
+		else
+			report("failed to read bplist from %s", argv[1]);
+	} else if (!strcmp(cmd, "write-bplist")) {
+		if (!bplist_write(&global_bplist, argv[1]))
+			report("bplist written to %s", argv[1]);
+		else
+			report("failed to write bplist to %s", argv[1]);
 	} else if (!strcmp(cmd, "save-display")) {
 		const char *path = argv[1] ? argv[1] : "tig-display.txt";
 
