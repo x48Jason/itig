@@ -11,6 +11,7 @@
  * GNU General Public License for more details.
  */
 
+#include "tig/line.h"
 #include "tig/tig.h"
 #include "tig/graph.h"
 #include "tig/draw.h"
@@ -451,10 +452,8 @@ draw_graph(struct view *view, const struct graph *graph, const struct graph_canv
 static bool
 draw_commit_title(struct view *view, struct view_column *column, enum line_type type,
 		  const struct graph *graph, const struct graph_canvas *graph_canvas,
-		  const struct ref *refs, const char *commit_title, const char *commit_id)
+		  const struct ref *refs, const char *commit_title)
 {
-	enum line_type ltype = LINE_DEFAULT;
-
 	if (!column->opt.commit_title.display)
 		return false;
 	if (column->opt.commit_title.graph && graph && graph_canvas &&
@@ -464,10 +463,7 @@ draw_commit_title(struct view *view, struct view_column *column, enum line_type 
 	    draw_refs(view, column, refs))
 		return true;
 
-	if (commit_id && bplist_has_rev(&global_bplist, commit_id))
-		ltype = LINE_MAIN_BP_MARK;
-
-	return draw_text_overflow(view, commit_title, ltype,
+	return draw_text_overflow(view, commit_title, type,
 			column->opt.commit_title.overflow, 0);
 }
 
@@ -530,11 +526,23 @@ view_column_draw(struct view *view, struct line *line, unsigned int lineno)
 			continue;
 
 		case VIEW_COLUMN_COMMIT_TITLE:
-			if (draw_commit_title(view, column, line->type == LINE_MAIN_ANNOTATED ? LINE_MAIN_ANNOTATED : LINE_MAIN_COMMIT,
-					      column_data.graph, column_data.graph_canvas, column_data.refs, column_data.commit_title, column_data.id))
+		{
+			enum line_type type;
+
+			if (line_in_select_range(view, view->pos.offset + lineno))
+				type = LINE_SELECT_RANGE;
+			else if (column_data.id && bplist_has_rev(&global_bplist, column_data.id))
+				type = LINE_MAIN_BP_MARK;
+			else if (line->type == LINE_MAIN_ANNOTATED)
+				type = LINE_MAIN_ANNOTATED;
+			else
+				type = LINE_MAIN_COMMIT;
+
+			if (draw_commit_title(view, column, type, column_data.graph, column_data.graph_canvas,
+					      column_data.refs, column_data.commit_title))
 				return true;
 			continue;
-
+		}
 		case VIEW_COLUMN_FILE_NAME:
 			if (draw_filename(view, column, column_data.file_name, mode))
 				return true;

@@ -99,6 +99,18 @@ struct view_column {
 	bool hidden;
 };
 
+enum select_state {
+	select_none = 0,
+	select_in_progress,
+	select_done
+};
+
+struct select_range {
+	enum select_state state;
+	unsigned long start;
+	unsigned long end;
+};
+
 struct view {
 	const char *name;	/* View name */
 	char *ref_full_name;
@@ -158,6 +170,8 @@ struct view {
 	struct encoding *encoding;
 	bool unrefreshable;
 	struct watch watch;
+
+	struct select_range sel_range;
 
 	/* Private data */
 	void *private;
@@ -252,6 +266,9 @@ struct view *get_view(int index);
  * Navigation
  */
 
+bool line_in_select_range(struct view *view, unsigned long lineno);
+void view_select_range_to_bplist(struct view *view, bool add);
+void view_select_range_reset(struct view *view);
 bool goto_view_line(struct view *view, unsigned long offset, unsigned long lineno);
 void select_view_line(struct view *view, unsigned long lineno);
 void do_scroll_view(struct view *view, int lines);

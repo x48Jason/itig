@@ -74,6 +74,7 @@ struct ref;
 	_(MAIN_REF,		""), \
 	_(MAIN_HEAD,		""), \
 	_(MAIN_BP_MARK,		""), \
+	_(SELECT_RANGE,		""), \
 	_(STAT_NONE,		""), \
 	_(STAT_STAGED,		""), \
 	_(STAT_UNSTAGED,	""), \

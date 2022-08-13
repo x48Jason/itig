@@ -82,6 +82,10 @@
 	REQ_(OPTIONS,		"Open the options menu"), \
 	REQ_(SCREEN_REDRAW,	"Redraw the screen"), \
 	REQ_(TOGGLE_BP_MARK,	"Toggle BP mark"), \
+	REQ_(TOGGLE_SELECT_MARK,"Toggle select mark"), \
+	REQ_(SELECT_ADD_BPLIST,	"Add select range to bplist"), \
+	REQ_(SELECT_DEL_BPLIST,	"Del select range from bplist"), \
+	REQ_(CLEAR_SELECT_RANGE,"Clear select range"), \
 	REQ_(STOP_LOADING,	"Stop all loading views"), \
 	REQ_(SHOW_VERSION,	"Show version information"), \
 	REQ_(NONE,		"Do nothing")

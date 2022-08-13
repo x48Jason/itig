@@ -20,6 +20,67 @@
 #include "tig/search.h"
 #include "tig/draw.h"
 #include "tig/display.h"
+#include "tig/bplist.h"
+
+bool
+line_in_select_range(struct view *view, unsigned long lineno)
+{
+	struct select_range *r = &view->sel_range;
+	unsigned long end;
+
+	if (r->state == select_none)
+		return false;
+	if (r->state == select_in_progress)
+		end = view->pos.lineno;
+	else
+		end = r->end;
+
+	if ((lineno >= r->start && lineno <= end) ||
+	    (lineno <= r->start && lineno >= end)) {
+		return true;
+	}
+
+	return false;
+}	
+
+void view_select_range_to_bplist(struct view *view, bool add)
+{
+	struct select_range *r;
+	long from, to, n;
+
+	r = &view->sel_range;
+	if (r->state != select_done)
+		return;
+
+	from = (r->start < r->end) ? r->start : r->end;
+	to = (r->start > r->end) ? r->start : r->end;
+	io_trace("%s: from:%ld, to:%ld, env commit: %s\n", "select-to-bplist", from, to, view->env->commit);
+	for (n = from; n <= to; n++) {
+		struct view_column_data column_data;
+		struct line *line = view->line + n;
+
+		if (!view->ops || !view->ops->get_column_data ||
+		    !view->ops->get_column_data(view, line, &column_data))
+			continue;
+		if (!column_data.id || string_rev_is_null(column_data.id))
+			continue;
+
+		io_trace("%s: line %ld, commit id: %s\n", "select-to-bplist", n, column_data.id);
+
+		if (add)
+			bplist_add_rev(&global_bplist, column_data.id, NULL);
+		else
+			bplist_rem_rev(&global_bplist, column_data.id);
+	}
+}
+
+void view_select_range_reset(struct view *view)
+{
+	struct select_range *r = &view->sel_range;
+
+	r->state = select_none;
+	r->start = r->end = 0;
+}
 
 /*
  * Navigation

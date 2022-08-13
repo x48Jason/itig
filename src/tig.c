@@ -330,10 +330,53 @@ view_driver(struct view *view, enum request request)
 		break;
 
 	case REQ_TOGGLE_BP_MARK:
-		if (string_rev_is_null(argv_env.commit))
+		if (string_rev_is_null(argv_env.commit)) {
 			report("can't put null commit into bplist");
-		else
+		} else {
 			bplist_toggle_rev(&global_bplist, argv_env.commit);
+			if (!strcmp(view->name, "quick"))
+				refresh_view(view);
+		}
+		break;
+
+	case REQ_TOGGLE_SELECT_MARK:
+		{
+			struct select_range *r = &view->sel_range;
+
+			switch (r->state) {
+			case select_none:
+			case select_done:
+				r->start = view->pos.lineno;
+				r->state = select_in_progress;
+				break;
+			case select_in_progress:
+				r->end = view->pos.lineno;
+				r->state = select_done;
+				break;
+			default:
+				die("unknown select state %d", r->state);
+			}
+			redraw_view(view);
+		}
+		break;
+
+	case REQ_SELECT_ADD_BPLIST:
+		view_select_range_to_bplist(view, true);
+		if (!strcmp(view->name, "quick"))
+			refresh_view(view);
+		break;
+
+	case REQ_SELECT_DEL_BPLIST:
+		view_select_range_to_bplist(view, false);
+		if (!strcmp(view->name, "quick")) {
+			view_select_range_reset(view);
+			refresh_view(view);
+		}
+		break;
+
+	case REQ_CLEAR_SELECT_RANGE:
+		view_select_range_reset(view);
+		redraw_view(view);
 		break;
 
 	case REQ_STOP_LOADING:
