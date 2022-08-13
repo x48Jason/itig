@@ -164,6 +164,7 @@ void TIG_NORETURN usage(const char *message);
 
 #define VIEW_INFO(_) \
 	_(MAIN,   main), \
+	_(QUICK,  quick), \
 	_(DIFF,   diff), \
 	_(LOG,    log), \
 	_(REFLOG, reflog), \

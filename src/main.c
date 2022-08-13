@@ -23,6 +23,7 @@
 #include "tig/status.h"
 #include "tig/stage.h"
 #include "tig/main.h"
+#include "tig/quick.h"
 #include "tig/diff.h"
 #include "tig/search.h"
 

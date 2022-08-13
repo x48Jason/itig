@@ -44,6 +44,7 @@
 #include "tig/log.h"
 #include "tig/reflog.h"
 #include "tig/main.h"
+#include "tig/quick.h"
 #include "tig/pager.h"
 #include "tig/refs.h"
 #include "tig/stage.h"
@@ -249,6 +250,9 @@ view_driver(struct view *view, enum request request)
 		break;
 	case REQ_VIEW_STASH:
 		open_stash_view(view, OPEN_DEFAULT);
+		break;
+	case REQ_VIEW_QUICK:
+		open_quick_view(view, OPEN_RELOAD | OPEN_SPLIT);
 		break;
 
 	case REQ_NEXT:
