@@ -1239,7 +1239,8 @@ exec_run_request(struct view *view, struct run_request *req)
 		if (confirmed)
 			open_external_viewer(argv, repo.cdup, req->flags.silent,
 					     !req->flags.exit, req->flags.echo,
-					     req->flags.quick, req->flags.register_key, false, "");
+					     req->flags.quick, req->flags.bplist,
+					     req->flags.register_key, false, "");
 	}
 
 	if (argv)

@@ -16,6 +16,7 @@
 #include "tig/argv.h"
 #include "tig/io.h"
 #include "tig/keys.h"
+#include <string.h>
 
 struct keybinding {
 	enum request request;
@@ -475,6 +476,10 @@ parse_run_request_flags(struct run_request_flags *flags, const char **argv)
 			flags->echo = 1;
 		} else if (*argv[0] == '>') {
 			flags->quick = 1;
+		} else if (!strncmp(argv[0], "=(bplist)", 9)) {
+			flags->bplist = 1;
+			argv[0] += 9;
+			continue;
 		} else if (at_register_flag_open(argv[0])
 			   && at_register_escd_pair(argv[0] + 2)
 			   && at_register_flag_close(argv[0] + 4)) {
@@ -534,7 +539,8 @@ get_run_request(enum request request)
 const char *
 format_run_request_flags(const struct run_request *req)
 {
-	static char flags[16];
+#define FLAGS_LEN	32
+	static char flags[FLAGS_LEN];
 	int flagspos = 0;
 
 	memset(flags, 0, sizeof(flags));
@@ -554,7 +560,12 @@ format_run_request_flags(const struct run_request *req)
 		flags[flagspos++] = '+';
 	if (req->flags.quick)
 		flags[flagspos++] = '>';
-	if (req->flags.register_key) {
+	if (req->flags.bplist) {
+		if (flagspos <= FLAGS_LEN - 1 - 9) {
+			strcpy(flags + flagspos, "=(bplist)");
+			flagspos += 9;
+		}
+	} else if (req->flags.register_key) {
 		flags[flagspos++] = REGISTER_FLAG_OPEN_STR[0];
 		flags[flagspos++] = REGISTER_FLAG_OPEN_STR[1];
 		if (is_register_meta_char(req->flags.register_key))

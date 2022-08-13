@@ -21,6 +21,7 @@
 #include "tig/display.h"
 #include "tig/watch.h"
 #include "tig/registers.h"
+#include "tig/bplist.h"
 
 #define MAX_KEYS 2000
 
@@ -65,11 +66,34 @@ open_script(const char *path)
 }
 
 bool
-open_external_viewer(const char *argv[], const char *dir, bool silent, bool confirm, bool echo, bool quick, char register_key, bool do_refresh, const char *notice)
+open_external_viewer(const char *argv[], const char *dir, bool silent, bool confirm, bool echo, bool quick, bool bplist, char register_key, bool do_refresh, const char *notice)
 {
 	bool ok;
 
-	if (echo || register_key) {
+	if (bplist) {
+		char *buf = io_run_alloc_buf(argv, dir);
+		int count = 0, imported_count;
+		char *p;
+
+		if (!buf) {
+			report("failed to open external viewer");
+			return false;
+		}
+
+		p = buf;
+		while ((p = strchr(p, '\n'))) {
+			count++;
+			p++;
+		}
+
+		io_trace("open_external_viewer: import bplist from external command output\n");
+		io_trace("open_external_viewer: %s\n", buf);
+		imported_count = bplist_import(&global_bplist, buf);
+		report("bplist: total (%d) commits, imported (%d)", count, imported_count);
+		free(buf);
+		return true;
+
+	} else if (echo || register_key) {
 		char buf[SIZEOF_STR] = "";
 
 		io_run_buf(argv, buf, sizeof(buf), dir, false);
@@ -166,7 +190,7 @@ open_editor(const char *file, unsigned int lineno)
 	if (lineno && opt_editor_line_number && string_format(lineno_cmd, "+%u", lineno))
 		editor_argv[argc++] = lineno_cmd;
 	editor_argv[argc] = file;
-	if (!open_external_viewer(editor_argv, repo.cdup, false, false, false, false, 0, true, EDITOR_LINENO_MSG))
+	if (!open_external_viewer(editor_argv, repo.cdup, false, false, false, false, false, 0, true, EDITOR_LINENO_MSG))
 		opt_editor_line_number = false;
 }
 
