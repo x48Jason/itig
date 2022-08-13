@@ -19,7 +19,7 @@ TIG_NCURSES ?= -lcurses
 LDFLAGS ?= $(TIG_LDFLAGS)
 CPPFLAGS ?= $(TIG_CPPFLAGS)
 LDLIBS ?= $(TIG_NCURSES) $(TIG_LDLIBS)
-CFLAGS ?= -Wall -O2 $(TIG_CFLAGS)
+CFLAGS ?= -Wall -g $(TIG_CFLAGS)
 
 prefix ?= $(HOME)
 bindir ?= $(prefix)/bin
