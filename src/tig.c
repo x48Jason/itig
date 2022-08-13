@@ -356,6 +356,11 @@ view_driver(struct view *view, enum request request)
 		if (!strcmp(view->name, "quick"))
 			refresh_view(view);
 		break;
+	case REQ_BPLIST_SORT:
+		bplist_sort(&global_bplist);
+		if (!strcmp(view->name, "quick"))
+			refresh_view(view);
+		break;
 	case REQ_TOGGLE_SELECT_MARK:
 		{
 			struct select_range *r = &view->sel_range;
