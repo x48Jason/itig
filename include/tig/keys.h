@@ -85,6 +85,7 @@ struct run_request_flags {
 	bool echo;
 	bool quick;
 	bool bplist;
+	bool on_each_select;
 	char register_key;
 };
 

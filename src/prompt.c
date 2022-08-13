@@ -11,6 +11,7 @@
  * GNU General Public License for more details.
  */
 
+#include "tig/line.h"
 #include "tig/tig.h"
 #include "tig/repo.h"
 #include "tig/view.h"
@@ -1198,8 +1199,8 @@ run_prompt_command(struct view *view, const char *argv[])
 	return REQ_NONE;
 }
 
-enum request
-exec_run_request(struct view *view, struct run_request *req)
+static enum request
+do_exec_run_request(struct view *view, struct run_request *req)
 {
 	const char **argv = NULL;
 	bool confirmed = false;
@@ -1260,6 +1261,42 @@ exec_run_request(struct view *view, struct run_request *req)
 	}
 
 	return request;
+}
+
+enum request
+exec_run_request(struct view *view, struct run_request *req)
+{
+	struct select_range *r;
+	argv_string saved_commit;
+	long from, to, n;
+
+	if (!req->flags.on_each_select)
+		return do_exec_run_request(view, req);
+
+	r = &view->sel_range;
+	if (r->state != select_done)
+		return REQ_NONE;
+
+	from = (r->start > r->end) ? r->start : r->end;
+	to = (r->start < r->end) ? r->start : r->end;
+	io_trace("%s: from:%ld, to:%ld, env commit: %s\n", __func__, from, to, view->env->commit);
+	strncpy(saved_commit, view->env->commit, SIZEOF_STR);
+	for (n = from; n >= to; n--) {
+		struct view_column_data column_data;
+		struct line *line = view->line + n;
+
+		if (!view->ops->get_column_data(view, line, &column_data))
+			continue;
+		if (!column_data.id)
+			continue;
+
+		io_trace("%s: line %ld, commit id: %s\n", __func__, n, column_data.id);
+		strncpy(view->env->commit, column_data.id, SIZEOF_STR);
+		do_exec_run_request(view, req);
+	}
+	io_trace("before restore env->commit\n");
+	strncpy(view->env->commit, saved_commit, SIZEOF_STR);
+	return REQ_REFRESH;
 }
 
 enum request

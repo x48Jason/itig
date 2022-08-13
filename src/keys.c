@@ -450,7 +450,7 @@ static size_t run_requests;
 
 DEFINE_ALLOCATOR(realloc_run_requests, struct run_request, 8)
 
-#define COMMAND_FLAGS ":!?@<+>="
+#define COMMAND_FLAGS ":!?@<+>=%"
 
 enum status_code
 parse_run_request_flags(struct run_request_flags *flags, const char **argv)
@@ -476,6 +476,8 @@ parse_run_request_flags(struct run_request_flags *flags, const char **argv)
 			flags->echo = 1;
 		} else if (*argv[0] == '>') {
 			flags->quick = 1;
+		} else if (*argv[0] == '%') {
+			flags->on_each_select = 1;
 		} else if (!strncmp(argv[0], "=(bplist)", 9)) {
 			flags->bplist = 1;
 			argv[0] += 9;
@@ -560,6 +562,8 @@ format_run_request_flags(const struct run_request *req)
 		flags[flagspos++] = '+';
 	if (req->flags.quick)
 		flags[flagspos++] = '>';
+	if (req->flags.on_each_select)
+		flags[flagspos++] = '%';
 	if (req->flags.bplist) {
 		if (flagspos <= FLAGS_LEN - 1 - 9) {
 			strcpy(flags + flagspos, "=(bplist)");
