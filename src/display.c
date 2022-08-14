@@ -71,10 +71,12 @@ open_external_viewer(const char *argv[], const char *dir, bool silent, bool conf
 	bool ok;
 
 	if (bplist) {
-		char *buf = io_run_alloc_buf(argv, dir);
+		char *buf;
 		int count = 0, imported_count;
 		char *p;
 
+		io_trace_argv("open_external_viewer:io_run_alloc_buf", argv);
+		buf= io_run_alloc_buf(argv, dir);
 		if (!buf) {
 			report("failed to open external viewer");
 			return false;

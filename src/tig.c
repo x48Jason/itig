@@ -339,6 +339,21 @@ view_driver(struct view *view, enum request request)
 		}
 		break;
 
+	case REQ_ADD_BPLIST:
+		bplist_add_rev(&global_bplist, argv_env.commit, NULL);
+		if (!strcmp(view->name, "quick"))
+			refresh_view(view);
+		break;
+	case REQ_DEL_BPLIST:
+		bplist_rem_rev(&global_bplist, argv_env.commit);
+		if (!strcmp(view->name, "quick"))
+			refresh_view(view);
+		break;
+	case REQ_CLEAR_BPLIST:
+		bplist_rem_all(&global_bplist);
+		if (!strcmp(view->name, "quick"))
+			refresh_view(view);
+		break;
 	case REQ_TOGGLE_SELECT_MARK:
 		{
 			struct select_range *r = &view->sel_range;

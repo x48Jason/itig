@@ -17,6 +17,7 @@
 #include "tig/options.h"
 #include "tig/prompt.h"
 #include "tig/registers.h"
+#include "tig/io.h"
 
 static bool
 concat_argv(const char *argv[], char *buf, size_t buflen, const char *sep, bool quoted)
@@ -476,6 +477,7 @@ argv_format(struct argv_env *argv_env, const char ***dst_argv, const char *src_a
 	struct format_context format = { vars, ARRAY_SIZE(vars), "", 0, flags };
 	int argc;
 
+	io_trace_argv("argv_format:src_argv", src_argv);
 	argv_free(*dst_argv);
 
 	for (argc = 0; src_argv[argc]; argc++) {
@@ -519,6 +521,7 @@ argv_format(struct argv_env *argv_env, const char ***dst_argv, const char *src_a
 		}
 	}
 
+	io_trace_argv("argv_format:dst_argv", *dst_argv);
 	return src_argv[argc] == NULL;
 }
 

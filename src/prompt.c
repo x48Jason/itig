@@ -1220,6 +1220,8 @@ do_exec_run_request(struct view *view, struct run_request *req)
 		return REQ_NONE;
 	}
 
+	io_trace_argv("do_exec_run_request", argv);
+
 	if (req->flags.internal) {
 		request = run_prompt_command(view, argv);
 
