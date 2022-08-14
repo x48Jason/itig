@@ -114,5 +114,7 @@ const char *get_temp_dir(void);
 bool PRINTF_LIKE(2, 3) io_fprintf(FILE *file, const char *fmt, ...);
 bool io_trace(const char *fmt, ...);
 
+void io_trace_argv(const char *msg, const char **argv);
+
 #endif
 /* vim: set ts=8 sw=8 noexpandtab: */

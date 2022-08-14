@@ -335,6 +335,21 @@ io_trace(const char *fmt, ...)
 	return retval != -1;
 }
 
+void
+io_trace_argv(const char *msg, const char **argv)
+{
+	int i = 0;
+	
+	io_trace("%s", msg);
+	
+	while (argv && argv[i]) {
+		io_trace(" %s", argv[i]);
+		i++;
+	}
+	
+	io_trace("\n");
+}
+
 bool
 io_exec(struct io *io, enum io_type type, const char *dir, char * const env[], const char *argv[], int custom)
 {
