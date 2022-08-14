@@ -11,6 +11,7 @@
  * GNU General Public License for more details.
  */
 
+#include "tig/tig.h"
 #include "tig/util.h"
 #include "tig/map.h"
 #include "tig/repo.h"
@@ -372,6 +373,103 @@ void bplist_rem_all(struct bplist *bpl)
 		bpl->lines[i] = NULL;
 	}
 	bpl->nlines = 0;
+
+	bpl->saved = false;
+}
+
+struct sort_ctx {
+	const char ***dst_argv;
+	const char **src_argv;
+};
+
+int check_rev_argv(const char *rev, void *data)
+{
+	struct sort_ctx *ctx = data;
+	const char **argv = ctx->src_argv;
+	int argc = 0, remaining = argv_size(ctx->src_argv);
+
+	while (argv && argv[argc]) {
+		if (!strcmp(argv[argc], rev)) {
+			io_trace("check: found %s\n", rev);
+			argv_append(ctx->dst_argv, rev);
+			remaining--;
+			if (!remaining)
+				return IO_FUNC_DONE;
+			do {
+				argc++;
+				argv[argc - 1] = argv[argc];
+			} while (argv[argc]);
+			break;
+		}
+		argc++;
+	}
+
+	return IO_FUNC_CONTINUE;
+}
+
+void bplist_sort(struct bplist *bpl)
+{
+	const char **rev_argv = NULL;
+	const char **mb_argv = NULL;
+	const char **argv = NULL;
+	const char **av = NULL;
+	struct line **lines;
+	struct sort_ctx ctx;
+	char *buf, *q, *p;
+	int i;
+
+	for (i = 0; i < bpl->nlines; i++) {
+		struct line *line = bpl->lines[i];
+		argv_append(&rev_argv, line->rev);
+	}
+	argv_append(&av, "git");
+	argv_append(&av, "merge-base");
+	argv_append(&av, "--all");
+	argv_append(&av, "--octopus");
+	argv_append_array(&av, rev_argv);
+	buf = io_run_alloc_buf(av, NULL);
+
+	q = buf;
+	while ((p = strchr(buf, '\n'))) {
+		char merge_base[64];
+		*p = '\0';
+		if (argv_contains(rev_argv, q))
+			snprintf(merge_base, 64, "^%s^", q);
+		else
+			snprintf(merge_base, 64, "^%s", q);
+		argv_append(&mb_argv, merge_base);
+		q = p + 1;
+	}
+	free(buf);
+	io_trace_argv("bplist_to_argv: merge_base_array", mb_argv);
+
+	argv_free(av);
+	argv_append(&av, "git");
+	argv_append(&av, "rev-list");
+	argv_append(&av, "--topo-order");
+	argv_append_array(&av, mb_argv);
+	argv_append_array(&av, rev_argv);
+	io_trace_argv("bplist_to_argv: before exec_func", av);
+	ctx.src_argv = rev_argv;
+	ctx.dst_argv = &argv;
+	if (!io_run_exec_func(av, check_rev_argv, &ctx))
+		die("fail to sort");
+	io_trace_argv("bplist_to_argv: after sort", argv);
+
+	lines = malloc(bpl->capacity * sizeof(void *));
+	i = 0;
+	while (argv[i]) {
+		struct cval *kv;
+		kv = string_map_get(&bpl->commits, argv[i]);
+		if (!kv)
+			die("inconsistent rev map");
+		lines[i] = kv->line;
+		i++;
+	}
+	if (i != bpl->nlines)
+		die("sorted items not equal to original");
+	free(bpl->lines);
+	bpl->lines = lines;
 
 	bpl->saved = false;
 }

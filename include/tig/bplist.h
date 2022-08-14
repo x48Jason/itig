@@ -28,6 +28,8 @@ void bplist_rem_rev(struct bplist *bpl, const char *rev);
 void bplist_rem_all(struct bplist *bpl);
 bool bplist_toggle_rev(struct bplist *bpl, const char *rev);
 
+void bplist_sort(struct bplist *bpl);
+
 void bplist_to_argv(struct bplist *bpl, const char ***argv);
 
 int bplist_read(struct bplist *bpl, const char *fn);
