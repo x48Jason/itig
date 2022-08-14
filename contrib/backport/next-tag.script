@@ -1,0 +1,4 @@
+:set-register d %(commit)
+:exec =(c)~/bin/find-next-tag.sh %(commit) %(ref)
+:goto %(register:c)
+

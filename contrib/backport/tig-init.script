@@ -1,0 +1,2 @@
+:exec =(b)~/bin/get-repo-commit-list-base.sh
+
