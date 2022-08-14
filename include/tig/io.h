@@ -117,5 +117,10 @@ bool io_trace(const char *fmt, ...);
 
 void io_trace_argv(const char *msg, const char **argv);
 
+#define IO_FUNC_DONE		0
+#define IO_FUNC_CONTINUE	1
+#define IO_FUNC_ERROR		2
+
+bool io_run_exec_func(const char **argv, int (*func)(const char *rev, void *data), void *data);
 #endif
 /* vim: set ts=8 sw=8 noexpandtab: */

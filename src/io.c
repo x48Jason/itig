@@ -455,6 +455,7 @@ io_run_bg(const char **argv, const char *dir)
 bool
 io_run_fg(const char **argv, const char *dir)
 {
+	io_trace_argv("io_run_fg", argv);
 	return io_complete(IO_FG, argv, dir, -1);
 }
 
@@ -664,6 +665,7 @@ io_read_alloc_buf(struct io *io)
 	while (io_get(io, &result, '\n', true)) {
 		size_t len;
 		result.data = string_trim(result.data);
+		io_trace("io_read_alloc_buf: %s\n", result.data);
 		len = strlen(result.data);
 		if (buflen - occupied < len + 2) {
 			buflen *= 2;
@@ -687,6 +689,8 @@ io_run_buf(const char **argv, char buf[], size_t bufsize, const char *dir, bool 
 {
 	struct io io;
 
+	io_trace_argv("io_run_buf", argv);
+
 	return io_run(&io, IO_RD, dir, NULL, argv) && io_read_buf(&io, buf, bufsize, allow_empty);
 }
 
@@ -695,9 +699,33 @@ io_run_alloc_buf(const char **argv, const char *dir)
 {
 	struct io io;
 
+	io_trace_argv("io_run_alloc_buf", argv);
+
 	if (!io_run(&io, IO_RD, dir, NULL, argv))
 		return NULL;
 	return io_read_alloc_buf(&io);
+}
+
+bool
+io_run_exec_func(const char **argv, int (*func)(const char *rev, void *data), void *data)
+{
+	struct buffer result = {0};
+	struct io io;
+	int ret;
+
+	io_trace_argv("io_run_exec_func", argv);
+
+	if (!io_run(&io, IO_RD, NULL, NULL, argv))
+		return false;
+
+	while (io_get(&io, &result, '\n', true)) {
+		result.data = string_trim(result.data);
+		ret = (*func)(result.data, data);
+		if (ret != IO_FUNC_CONTINUE)
+			break;
+	}
+	io_done(&io);
+	return ret == IO_FUNC_DONE;
 }
 
 bool
