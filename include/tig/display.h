@@ -53,7 +53,22 @@ bool save_view(struct view *view, const char *path);
 bool vertical_split_is_enabled(enum vertical_split vsplit, int height, int width);
 int apply_vertical_split(int base_width);
 
-bool open_external_viewer(const char *argv[], const char *dir, bool silent, bool confirm, bool echo, bool quick, bool bplist, char register_key, bool refresh, const char *notice);
+struct external_viewer_ctx {
+	const char **argv;
+	const char *dir;
+	const char *notice;
+	char register_key;
+	bool confirm;
+	bool silent;
+	bool echo;
+	bool quick;
+	bool bplist;
+	bool do_refresh;
+	bool batch;
+};
+
+bool switch_display_exec_func(bool (*func)(void *data), void *data, struct external_viewer_ctx *ctx);
+bool open_external_viewer(struct external_viewer_ctx *ctx);
 void open_editor(const char *file, unsigned int lineno);
 void enable_mouse(bool enable);
 

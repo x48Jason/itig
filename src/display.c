@@ -67,10 +67,57 @@ open_script(const char *path)
 		? SUCCESS : error("Failed to open %s", buf);
 }
 
-bool
-open_external_viewer(const char *argv[], const char *dir, bool silent, bool confirm, bool echo, bool quick, bool bplist, char register_key, bool do_refresh, const char *notice)
+bool switch_display_exec_func(bool (*func)(void *data), void *data, struct external_viewer_ctx *ctx)
 {
 	bool ok;
+
+	clear();
+	refresh();
+	endwin();                  /* restore original tty modes */
+	tcsetattr(opt_tty.fd, TCSAFLUSH, opt_tty.attr);
+	if (func)
+		ok = (*func)(data);
+	else
+		ok = true;
+	if (ctx->confirm || !ok) {
+		if (!ok && *ctx->notice)
+			fprintf(stderr, "%s", ctx->notice);
+
+		if (!ok || (!ctx->quick && !ctx->batch)) {
+			fprintf(stderr, "\n\nPress Enter to continue");
+			getc(opt_tty.file);
+		}
+	}
+	fseek(opt_tty.file, 0, SEEK_END);
+	tcsetattr(opt_tty.fd, TCSAFLUSH, opt_tty.attr);
+	set_terminal_modes();
+	return ok;
+}
+
+static bool
+external_viewer_func(void *data)
+{
+	struct external_viewer_ctx *ctx = data;
+
+	return io_run_fg(ctx->argv, ctx->dir);
+}
+
+bool
+open_external_viewer(struct external_viewer_ctx *ctx)
+{
+	bool silent, echo, bplist, do_refresh; 
+	char register_key;
+	const char **argv;
+	const char *dir;
+	bool ok;
+
+	argv = ctx->argv;
+	dir = ctx->dir;
+	silent = ctx->silent;
+	echo = ctx->echo;
+	bplist = ctx->bplist;
+	register_key = ctx->register_key;
+	do_refresh = ctx->do_refresh;
 
 	io_trace_argv("open_external_viewer", argv);
 
@@ -126,23 +173,7 @@ open_external_viewer(const char *argv[], const char *dir, bool silent, bool conf
 		ok = io_run_bg(argv, dir);
 
 	} else {
-		clear();
-		refresh();
-		endwin();                  /* restore original tty modes */
-		tcsetattr(opt_tty.fd, TCSAFLUSH, opt_tty.attr);
-		ok = io_run_fg(argv, dir);
-		if (confirm || !ok) {
-			if (!ok && *notice)
-				fprintf(stderr, "%s", notice);
-
-			if (!ok || !quick) {
-				fprintf(stderr, "Press Enter to continue");
-				getc(opt_tty.file);
-			}
-		}
-		fseek(opt_tty.file, 0, SEEK_END);
-		tcsetattr(opt_tty.fd, TCSAFLUSH, opt_tty.attr);
-		set_terminal_modes();
+		ok = switch_display_exec_func(external_viewer_func, ctx, ctx);
 	}
 
 	if (watch_update(WATCH_EVENT_AFTER_COMMAND) && do_refresh) {
@@ -170,6 +201,7 @@ void
 open_editor(const char *file, unsigned int lineno)
 {
 	const char *editor_argv[SIZEOF_ARG + 3] = { "vi", file, NULL };
+	struct external_viewer_ctx ctx;
 	char editor_cmd[SIZEOF_STR];
 	char lineno_cmd[SIZEOF_STR];
 	const char *editor;
@@ -196,7 +228,19 @@ open_editor(const char *file, unsigned int lineno)
 	if (lineno && opt_editor_line_number && string_format(lineno_cmd, "+%u", lineno))
 		editor_argv[argc++] = lineno_cmd;
 	editor_argv[argc] = file;
-	if (!open_external_viewer(editor_argv, repo.cdup, false, false, false, false, false, 0, true, EDITOR_LINENO_MSG))
+
+	ctx.argv = editor_argv;
+	ctx.dir = repo.cdup;
+	ctx.silent = false;
+	ctx.confirm = false;
+	ctx.echo = false;
+	ctx.quick = false;
+	ctx.bplist = false;
+	ctx.register_key = 0;
+	ctx.do_refresh = true;
+	ctx.batch = false;
+	ctx.notice = EDITOR_LINENO_MSG;
+	if (!open_external_viewer(&ctx))
 		opt_editor_line_number = false;
 }
 

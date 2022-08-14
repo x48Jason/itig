@@ -1234,9 +1234,9 @@ do_exec_run_request(struct view *view, struct run_request *req)
 		request = run_prompt_command(view, argv, false);
 
 	} else {
-		confirmed = !req->flags.confirm;
+		confirmed = !req->flags.confirm || req->flags.on_each_select;
 
-		if (req->flags.confirm) {
+		if (req->flags.confirm && !confirmed) {
 			char cmd[SIZEOF_STR], prompt[SIZEOF_STR];
 			const char *and_exit = req->flags.exit ? " and exit" : "";
 
@@ -1247,11 +1247,23 @@ do_exec_run_request(struct view *view, struct run_request *req)
 			}
 		}
 
-		if (confirmed)
-			open_external_viewer(argv, repo.cdup, req->flags.silent,
-					     !req->flags.exit, req->flags.echo,
-					     req->flags.quick, req->flags.bplist,
-					     req->flags.register_key, false, "");
+		if (confirmed) {
+			struct external_viewer_ctx ctx;
+
+			ctx.argv = argv;
+			ctx.dir = repo.cdup;
+			ctx.silent = req->flags.silent;
+			ctx.confirm = !req->flags.exit;
+			ctx.echo = req->flags.echo;
+			ctx.quick = req->flags.quick;
+			ctx.bplist = req->flags.bplist;
+			ctx.register_key = req->flags.register_key;
+			ctx.do_refresh = false;
+			ctx.batch = req->flags.on_each_select;
+			ctx.notice = "";
+			if (!open_external_viewer(&ctx))
+				request = (enum request)-1;
+		}
 	}
 
 	if (argv)
@@ -1276,12 +1288,33 @@ do_exec_run_request(struct view *view, struct run_request *req)
 enum request
 exec_run_request(struct view *view, struct run_request *req)
 {
-	struct select_range *r;
+	struct external_viewer_ctx ctx;
 	argv_string saved_commit;
+	struct select_range *r;
+	enum request ret;
 	long from, to, n;
+	bool confirmed;
 
-	if (!req->flags.on_each_select)
-		return do_exec_run_request(view, req);
+	if (!req->flags.on_each_select) {
+		ret = do_exec_run_request(view, req);
+		if (ret == (enum request)-1)
+			ret = REQ_NONE;
+		return ret;
+	}
+
+	confirmed = !req->flags.confirm; 
+	if (req->flags.confirm && !confirmed) {
+		char cmd[SIZEOF_STR], prompt[SIZEOF_STR];
+		const char *and_exit = req->flags.exit ? " and exit" : "";
+
+		if (argv_to_string_quoted(req->argv, cmd, sizeof(cmd), " ") &&
+		    string_format(prompt, "Batch run `%s`%s?", cmd, and_exit) &&
+		    prompt_yesno(prompt)) {
+			confirmed = true;
+		}
+	}
+	if (!confirmed)
+		return REQ_NONE;
 
 	if (view->ops->get_select_range) {
 		if (!view->ops->get_select_range(view, &from, &to)) {
@@ -1316,10 +1349,28 @@ exec_run_request(struct view *view, struct run_request *req)
 
 		io_trace("%s: line %ld, commit id: %s\n", __func__, n, column_data.id);
 		strncpy(view->env->commit, column_data.id, SIZEOF_STR);
-		do_exec_run_request(view, req);
+		ret = do_exec_run_request(view, req);
+		if (ret == (enum request)-1)
+			break;
 	}
 	io_trace("before restore env->commit\n");
 	strncpy(view->env->commit, saved_commit, SIZEOF_STR);
+
+	if (ret != (enum request)-1) {
+		ctx.argv = req->argv;
+		ctx.dir = repo.cdup;
+		ctx.silent = req->flags.silent;
+		ctx.confirm = req->flags.confirm;
+		ctx.echo = req->flags.echo;
+		ctx.quick = req->flags.quick;
+		ctx.bplist = req->flags.bplist;
+		ctx.register_key = req->flags.register_key;
+		ctx.do_refresh = true;
+		ctx.batch = false;
+		ctx.notice = "";
+		switch_display_exec_func(NULL, NULL, &ctx);
+		redraw_display(true);
+	}
 	return REQ_REFRESH;
 }
 

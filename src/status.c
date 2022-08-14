@@ -704,8 +704,20 @@ static void
 open_mergetool(const char *file)
 {
 	const char *mergetool_argv[] = { "git", "mergetool", file, NULL };
+	struct external_viewer_ctx ctx;
 
-	open_external_viewer(mergetool_argv, repo.exec_dir, false, true, false, true, false, 0, true, "");
+	ctx.argv = mergetool_argv;
+	ctx.dir = repo.exec_dir;
+	ctx.silent = false;
+	ctx.confirm = true;
+	ctx.echo = false;
+	ctx.quick = true;
+	ctx.bplist = false;
+	ctx.register_key = 0;
+	ctx.do_refresh = true;
+	ctx.batch = false;
+	ctx.notice = "";
+	open_external_viewer(&ctx);
 }
 
 static enum request
