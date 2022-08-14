@@ -72,6 +72,8 @@ open_external_viewer(const char *argv[], const char *dir, bool silent, bool conf
 {
 	bool ok;
 
+	io_trace_argv("open_external_viewer", argv);
+
 	if (bplist) {
 		char *buf;
 		int count = 0, imported_count;

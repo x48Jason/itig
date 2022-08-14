@@ -150,6 +150,8 @@ open_run_request(struct view *view, enum request request)
 		return REQ_NONE;
 	}
 
+	io_trace("open_run_request: enter\n");
+
 	return exec_run_request(view, req);
 }
 

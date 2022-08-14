@@ -974,6 +974,8 @@ run_prompt_command(struct view *view, const char *argv[], bool blocking)
 	const char *cmd = argv[0];
 	size_t cmdlen = cmd ? strlen(cmd) : 0;
 
+	io_trace_argv("run_prompt_command", argv);
+
 	if (!cmd)
 		return REQ_NONE;
 

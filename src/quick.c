@@ -74,6 +74,8 @@ quick_open(struct view *view, enum open_flags flags)
 	char filename[SIZEOF_STR] = "";
 	const char *quick_argv[] = { dir, filename, NULL };
 
+	io_trace("quick-open:\n");
+
 	bplist_to_argv(&global_bplist, &argv);
 
 	snprintf(filename, sizeof(filename), "quick-log-%d.pipe", getpid());
