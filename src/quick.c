@@ -121,7 +121,6 @@ quick_request(struct view *view, enum request request, struct line *line)
 		break;
 
 	case REQ_REFRESH:
-		load_refs(true);
 		refresh_view(view);
 		break;
 
