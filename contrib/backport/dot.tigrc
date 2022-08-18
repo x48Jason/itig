@@ -192,7 +192,7 @@ bind generic	<C-b>	toggle-bp-mark
 bind quick	<C-f>	%=(bplist)~/bin/find-fix-commit.sh %(commit)
 bind generic	<C-s>	toggle-select-mark
 bind generic	<C-@>	toggle-select-mark
-bind generic	<C-v>	select-add-bplist	
+bind generic	V	select-add-bplist
 
 bind main	x	=(bplist)~/bin/find-commit-feature-rev-range.sh %(commit) %(ref)
 bind blame	x	=(bplist)~/bin/find-commit-feature-rev-range.sh %(commit) %(ref)
