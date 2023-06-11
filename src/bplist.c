@@ -527,7 +527,7 @@ bplist_read(struct bplist *bpl, const char *fn)
 		if (!s && feof(fh)) {
 			break;
 		}
-		io_trace("bplist_read: add line: %s\n");
+		io_trace("bplist_read: add line: %s\n", s);
 		bplist_add_line(bpl, s);
 	}
 	fclose(fh);
