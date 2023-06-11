@@ -269,9 +269,8 @@ io_done(struct io *io)
 
 		io->status = WIFEXITED(status) ? WEXITSTATUS(status) : 0;
 
-		return waiting == pid &&
-		       !WIFSIGNALED(status) &&
-		       !io->status;
+		return waiting == pid && !io->status &&
+		       (!WIFSIGNALED(status) || WTERMSIG(status) == SIGPIPE);
 	}
 
 	return true;
