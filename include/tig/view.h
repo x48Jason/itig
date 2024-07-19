@@ -200,8 +200,10 @@ enum open_flags {
 struct view_column_data {
 	struct view_column *section;
 	const struct ident *author;
+	const struct ident *committer;
 	const char *commit_title;
 	const struct time *date;
+	const struct time *committer_date;
 	const char *file_name;
 	const unsigned long *file_size;
 	const struct graph *graph;

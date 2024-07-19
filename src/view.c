@@ -1130,6 +1130,11 @@ view_column_text(struct view *view, struct view_column_data *column_data,
 			text = mkauthor(column_data->author, column->opt.author.width, column->opt.author.display);
 		break;
 
+	case VIEW_COLUMN_COMMITTER:
+		if (column_data->committer)
+			text = mkcommitter(column_data->committer, column->opt.committer.width, column->opt.committer.display);
+		break;
+
 	case VIEW_COLUMN_COMMIT_TITLE:
 		text = column_data->commit_title;
 		break;

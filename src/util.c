@@ -384,6 +384,23 @@ mkauthor(const struct ident *ident, int cols, enum author author)
 }
 
 const char *
+mkcommitter(const struct ident *ident, int cols, enum committer committer)
+{
+	bool trim = author_trim(cols);
+	bool abbreviate = committer == COMMITTER_ABBREVIATED || !trim;
+
+	if (committer == COMMITTER_NO || !ident)
+		return "";
+	if (committer == COMMITTER_EMAIL && ident->email)
+		return ident->email;
+	if (committer == COMMITTER_EMAIL_USER && ident->email)
+		return get_email_user(ident->email);
+	if (abbreviate && ident->name)
+		return get_author_initials(ident->name);
+	return ident->name;
+}
+
+const char *
 mkmode(mode_t mode)
 {
 	if (S_ISDIR(mode))

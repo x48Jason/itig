@@ -89,6 +89,7 @@ int ident_compare(const struct ident *i1, const struct ident *i2);
 const char *mkdate(const struct time *time, enum date date, bool local, const char *custom_format);
 const char *mkfilesize(unsigned long size, enum file_size format);
 const char *mkauthor(const struct ident *ident, int cols, enum author author);
+const char *mkcommitter(const struct ident *ident, int cols, enum committer committer);
 const char *mkmode(mode_t mode);
 const char *mkstatus(const char status, enum status_label label);
 

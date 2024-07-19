@@ -32,7 +32,8 @@
 static int quick_append_one_log(const char *hash, int fd)
 {
 	const char *argv[] = {
-		"git", "show", "-s", hash, "--pretty=raw", "--date=raw", "--parents", "--no-color", NULL
+		"git", "show", "-s", hash, "--pretty=raw", "--date=raw", "--parents",
+		"--no-color", NULL
 	};
 
 	return io_run_append_no_close(argv, fd);
@@ -162,7 +163,7 @@ static struct view_ops quick_ops = {
 	view_column_grep,
 	main_select,
 	main_done,
-	view_column_bit(AUTHOR) | view_column_bit(COMMIT_TITLE) |
+	view_column_bit(AUTHOR) | view_column_bit(COMMITTER) | view_column_bit(COMMIT_TITLE) |
 		view_column_bit(DATE) |	view_column_bit(ID) |
 		view_column_bit(LINE_NUMBER),
 	main_get_column_data,

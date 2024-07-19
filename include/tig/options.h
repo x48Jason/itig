@@ -102,6 +102,11 @@ OPTION_INFO(DEFINE_OPTION_EXTERNS)
 	_(width,			int,			VIEW_NO_FLAGS) \
 	_(maxwidth,			int,			VIEW_NO_FLAGS) \
 
+#define COMMITTER_COLUMN_OPTIONS(_) \
+	_(display,			enum committer,		VIEW_NO_FLAGS) \
+	_(width,			int,			VIEW_NO_FLAGS) \
+	_(maxwidth,			int,			VIEW_NO_FLAGS) \
+
 #define COMMIT_TITLE_COLUMN_OPTIONS(_) \
 	_(display,			bool,			VIEW_NO_FLAGS) \
 	_(graph,			enum graph_display,	VIEW_LOG_LIKE) \
@@ -155,6 +160,7 @@ OPTION_INFO(DEFINE_OPTION_EXTERNS)
 
 #define COLUMN_OPTIONS(_) \
 	_(author, AUTHOR, AUTHOR_COLUMN_OPTIONS) \
+	_(committer, COMMITTER, COMMITTER_COLUMN_OPTIONS) \
 	_(commit_title, COMMIT_TITLE, COMMIT_TITLE_COLUMN_OPTIONS) \
 	_(date, DATE, DATE_COLUMN_OPTIONS) \
 	_(file_name, FILE_NAME, FILE_NAME_COLUMN_OPTIONS) \

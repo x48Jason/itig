@@ -365,7 +365,9 @@ main_get_column_data(struct view *view, const struct line *line, struct view_col
 	struct commit *commit = line->data;
 
 	column_data->author = commit->author;
+	column_data->committer = commit->committer;
 	column_data->date = &commit->time;
+	column_data->committer_date = &commit->committer_time;
 	column_data->id = commit->id;
 
 	column_data->commit_title = commit->title;
@@ -440,7 +442,7 @@ main_read(struct view *view, struct buffer *buf, bool force_stop)
 	type = get_line_type(line);
 	if (type == LINE_COMMIT) {
 		bool is_boundary;
-		char *author;
+		char *author, *committer;
 
 		state->in_header = true;
 		line += STRING_SIZE("commit ");
@@ -462,10 +464,16 @@ main_read(struct view *view, struct buffer *buf, bool force_stop)
 
 		main_register_commit(view, &state->current, line, is_boundary);
 
+		committer = NULL;
 		if (author) {
-			char *title = io_memchr(buf, author, 0);
-
+			committer = io_memchr(buf, author, 0);
 			parse_author_line(author, &commit->author, &commit->time);
+		}
+
+		if (committer) {
+			char *title = io_memchr(buf, committer, 0);
+
+			parse_author_line(committer, &commit->committer, &commit->committer_time);
 			if (state->with_graph)
 				graph->render_parents(graph, &commit->graph);
 			if (title) {
@@ -507,6 +515,12 @@ main_read(struct view *view, struct buffer *buf, bool force_stop)
 				  &commit->author, &commit->time);
 		if (state->with_graph)
 			graph->render_parents(graph, &commit->graph);
+		break;
+
+	case LINE_COMMITTER:
+		parse_author_line(line + STRING_SIZE("committer "),
+				  &commit->committer, &commit->committer_time);
+		io_trace("committer: %s\n", commit->committer->name);
 		break;
 
 	default:
@@ -639,7 +653,7 @@ static struct view_ops main_ops = {
 	view_column_grep,
 	main_select,
 	main_done,
-	view_column_bit(AUTHOR) | view_column_bit(COMMIT_TITLE) |
+	view_column_bit(AUTHOR) | view_column_bit(COMMITTER) | view_column_bit(COMMIT_TITLE) |
 		view_column_bit(DATE) |	view_column_bit(ID) |
 		view_column_bit(LINE_NUMBER),
 	main_get_column_data,

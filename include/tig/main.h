@@ -22,6 +22,8 @@ struct commit {
 	char id[SIZEOF_REV];		/* SHA1 ID. */
 	const struct ident *author;	/* Author of the commit. */
 	struct time time;		/* Date from the author ident. */
+	const struct ident *committer;	/* Committer of the commit. */
+	struct time committer_time;	/* Date from the committer ident. */
 	struct graph_canvas graph;	/* Ancestry chain graphics. */
 	char title[1];			/* First line of the commit message. */
 };

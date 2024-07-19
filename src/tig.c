@@ -102,6 +102,7 @@ view_request(struct view *view, enum request request)
 	_('.', "line numbers",			"line-number"), \
 	_('D', "dates",				"date"), \
 	_('A', "author",			"author"), \
+	_('M', "committer",			"committer"), \
 	_('~', "graphics",			"line-graphics"), \
 	_('g', "revision graph",		"commit-title-graph"), \
 	_('#', "file names",			"file-name"), \

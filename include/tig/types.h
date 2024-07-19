@@ -103,6 +103,13 @@ bool map_enum_do(const struct enum_map_entry *map, size_t map_size, int *value, 
 	_(AUTHOR, EMAIL), \
 	_(AUTHOR, EMAIL_USER)
 
+#define COMMITTER_ENUM(_) \
+	_(COMMITTER, NO), \
+	_(COMMITTER, FULL), \
+	_(COMMITTER, ABBREVIATED), \
+	_(COMMITTER, EMAIL), \
+	_(COMMITTER, EMAIL_USER)
+
 #define FILENAME_ENUM(_) \
 	_(FILENAME, NO), \
 	_(FILENAME, AUTO), \
@@ -129,6 +136,7 @@ bool map_enum_do(const struct enum_map_entry *map, size_t map_size, int *value, 
 
 #define VIEW_COLUMN_ENUM(_) \
 	_(VIEW_COLUMN, AUTHOR), \
+	_(VIEW_COLUMN, COMMITTER), \
 	_(VIEW_COLUMN, COMMIT_TITLE), \
 	_(VIEW_COLUMN, DATE), \
 	_(VIEW_COLUMN, FILE_NAME), \
@@ -165,6 +173,7 @@ bool map_enum_do(const struct enum_map_entry *map, size_t map_size, int *value, 
 
 #define ENUM_INFO(_) \
 	_(author, AUTHOR_ENUM) \
+	_(committer, COMMITTER_ENUM) \
 	_(commit_order, COMMIT_ORDER_ENUM) \
 	_(date, DATE_ENUM) \
 	_(file_size, FILE_SIZE_ENUM) \
