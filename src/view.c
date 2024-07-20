@@ -1580,6 +1580,11 @@ view_column_info_update(struct view *view, struct line *line)
 			maxwidth = MAXWIDTH(column->opt.author.maxwidth);
 			break;
 
+		case VIEW_COLUMN_COMMITTER:
+			width = column->opt.committer.width;
+			maxwidth = MAXWIDTH(column->opt.committer.maxwidth);
+			break;
+
 		case VIEW_COLUMN_COMMIT_TITLE:
 			break;
 
