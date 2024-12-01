@@ -22,6 +22,7 @@
 #include "tig/pager.h"
 #include "tig/types.h"
 #include "tig/bplist.h"
+#include "tig/search.h"
 
 #ifdef HAVE_READLINE
 #include <readline/readline.h>
@@ -274,6 +275,7 @@ readline_action_generator(const char *text, int state)
 		"set-register",
 		"read-bplist",
 		"write-bplist",
+		"set-search-mode",
 #define REQ_GROUP(help)
 #define REQ_(req, help)	#req
 		REQ_INFO,
@@ -1091,6 +1093,11 @@ run_prompt_command(struct view *view, const char *argv[], bool blocking)
 			report("bplist written to %s", argv[1]);
 		else
 			report("failed to write bplist to %s", argv[1]);
+	} else if (!strcmp(cmd, "set-search-mode")) {
+		if (!set_search_mode(argv[1]))
+			report("Search mode set to %s", argv[1]);
+		else
+			report("Unknown search mode: %s", argv[1]);
 	} else if (!strcmp(cmd, "save-display")) {
 		const char *path = argv[1] ? argv[1] : "tig-display.txt";
 

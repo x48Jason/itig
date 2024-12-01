@@ -17,8 +17,25 @@
 #include "tig/draw.h"
 #include "tig/main.h"
 #include "tig/graph.h"
+#include "tig/bplist.h"
 
 DEFINE_ALLOCATOR(realloc_unsigned_ints, unsigned int, 32)
+
+bool search_mode_bplist = false;
+
+int
+set_search_mode(const char *mode)
+{
+	if (strcmp(mode, "bplist") == 0) {
+		search_mode_bplist = true;
+		return 0;
+	} else if (strcmp(mode, "normal") == 0) {
+		search_mode_bplist = false;
+		return 0;
+	}
+
+	return -1;
+}
 
 bool
 grep_text(struct view *view, const char *text[])
@@ -163,12 +180,52 @@ find_next_match(struct view *view, enum request request)
 	return code == SUCCESS ? code : success("No match found for '%s'", view->grep);
 }
 
+static enum status_code
+find_next_bplist_line(struct view *view, enum request request)
+{
+	enum status_code code;
+	int direction;
+	long lineno;
+
+	switch (request) {
+	case REQ_FIND_NEXT:
+		direction = 1;
+		break;
+	case REQ_FIND_PREV:
+		direction = -1;
+		break;
+	default:
+		return error("Unknown search request");
+	}
+
+	lineno = view->pos.lineno;
+	while (1) {
+		lineno += direction;
+		if (lineno >= view->lines || lineno < 0)
+			break;
+
+		if (!view->line[lineno].bplist)
+			continue;
+
+		select_view_line(view, lineno);
+		update_view_title(view);
+		return success("Found next bplist line %zu", lineno + 1);
+	}
+
+	return error("No more bplist line");
+}
+
 void
 find_next(struct view *view, enum request request)
 {
-	enum status_code code = find_next_match(view, request);
+	if (search_mode_bplist) {
+		io_trace("bplist search find_next\n");
+		find_next_bplist_line(view, request);
+	} else {
+		enum status_code code = find_next_match(view, request);
 
-	report("%s", get_status_message(code));
+		report("%s", get_status_message(code));
+	}
 }
 
 static enum status_code
