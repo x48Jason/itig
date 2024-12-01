@@ -13,7 +13,6 @@
 
 #include "tig/tig.h"
 #include "tig/util.h"
-#include "tig/map.h"
 #include "tig/repo.h"
 #include "tig/io.h"
 #include "tig/argv.h"
@@ -53,22 +52,7 @@
  */
 struct cval {
 	char rev[SIZEOF_REV];
-	struct line *line;
-};
-
-struct line {
-	char *s;
-	char *rev;
-	long cdate;
-};
-
-struct bplist {
-	const char *fn;
-	struct string_map commits; /* maps revs to line */
-	struct line **lines;
-	size_t nlines;
-	size_t capacity;
-	bool saved;
+	struct bpline *line;
 };
 
 /*
@@ -76,7 +60,6 @@ struct bplist {
  */
 
 struct bplist global_bplist = {0};
-
 
 /*
  * Helpers for string_map
@@ -155,10 +138,10 @@ get_cdate(const char *fullrev)
 	return (long)atol(buf);
 }
 
-static struct line *
+static struct bpline *
 _add_line(struct bplist *bpl, char *s, const char *rev)
 {
-	struct line *line;
+	struct bpline *line;
 	long cdate;
 
 	if (rev)
@@ -175,7 +158,7 @@ _add_line(struct bplist *bpl, char *s, const char *rev)
 	line->cdate = cdate;
 
 	if (bpl->nlines >= bpl->capacity) {
-		struct line **p;
+		struct bpline **p;
 		size_t newcapa = bpl->capacity + 20;
 		p = realloc(bpl->lines, sizeof(*p)*newcapa);
 		if (!p)
@@ -280,7 +263,7 @@ void
 bplist_add_rev(struct bplist *bpl, const char *rev, const char *sline)
 {
 	struct cval *kv;
-	struct line *line;
+	struct bpline *line;
 	char *title;
 	char *final;
 
@@ -413,13 +396,13 @@ void bplist_sort(struct bplist *bpl)
 	const char **mb_argv = NULL;
 	const char **argv = NULL;
 	const char **av = NULL;
-	struct line **lines;
+	struct bpline **lines;
 	struct sort_ctx ctx;
 	char *buf, *q, *p;
 	int i;
 
 	for (i = 0; i < bpl->nlines; i++) {
-		struct line *line = bpl->lines[i];
+		struct bpline *line = bpl->lines[i];
 		argv_append(&rev_argv, line->rev);
 	}
 	argv_append(&av, "git");
@@ -479,7 +462,7 @@ void bplist_to_argv(struct bplist *bpl, const char ***argv)
 	int i;
 
 	for (i = 0; i < bpl->nlines; i++) {
-		struct line *line = bpl->lines[i];
+		struct bpline *line = bpl->lines[i];
 		io_trace("bplist to argv: %s\n", line->rev);
 		argv_append(argv, line->rev);
 	}

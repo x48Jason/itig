@@ -14,6 +14,23 @@
 #ifndef TIG_BPLIST_H
 #define TIG_BPLIST_H
 
+#include "tig/map.h"
+
+struct bpline {
+	char *s;
+	char *rev;
+	long cdate;
+};
+
+struct bplist {
+	const char *fn;
+	struct string_map commits; /* maps revs to line */
+	struct bpline **lines;
+	size_t nlines;
+	size_t capacity;
+	bool saved;
+};
+
 extern struct bplist global_bplist;
 
 void bplist_init(struct bplist *bpl, size_t capacity, const char *fn);
