@@ -51,6 +51,8 @@ void main_select(struct view *view, struct line *line);
 void main_done(struct view *view);
 bool main_status_exists(struct view *view, enum line_type type);
 
+void main_toggle_bplist(struct view *view, const char *commit_id);
+
 extern struct view main_view;
 
 static inline void

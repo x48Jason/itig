@@ -86,6 +86,7 @@
 	REQ_(DEL_BPLIST,	"Del from BP list"), \
 	REQ_(CLEAR_BPLIST,	"Clear BP list"), \
 	REQ_(BPLIST_SORT,	"Sort BP list to topo-order"), \
+	REQ_(ATTACH_BPLIST,	"Set BP list in main view"), \
 	REQ_(TOGGLE_SELECT_MARK,"Toggle select mark"), \
 	REQ_(SELECT_ADD_BPLIST,	"Add select range to bplist"), \
 	REQ_(SELECT_DEL_BPLIST,	"Del select range from bplist"), \

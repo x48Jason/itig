@@ -26,6 +26,7 @@
 #include "tig/quick.h"
 #include "tig/diff.h"
 #include "tig/search.h"
+#include "tig/bplist.h"
 
 /*
  * Main view backend
@@ -344,6 +345,39 @@ main_done(struct view *view)
 	free(state->reflog);
 }
 
+void
+main_toggle_bplist(struct view *view, const char *commit_id)
+{
+	int j;
+
+	for (j = 0; j < view->lines; j++) {
+		struct commit *commit = view->line[j].data;
+		if (strncmp(commit->id, commit_id, 40) == 0) {
+			view->line[j].bplist = view->line[j].bplist ? 0 : 1;
+			break;
+		}
+	}
+}
+
+void
+main_attach_bplist(struct view *view)
+{
+	struct bplist *bpl = &global_bplist;
+	int i, j;
+
+	for (i = 0; i < bpl->nlines; i++) {
+		struct bpline *bpline = bpl->lines[i];
+
+		for (j = 0; j < view->lines; j++) {
+			struct commit *commit = view->line[j].data;
+			if (strncmp(commit->id, bpline->rev, 40) == 0) {
+				view->line[j].bplist = 1;
+				break;
+			}
+		}
+	}
+}
+
 #define main_check_commit_refs(line)	!((line)->no_commit_refs)
 #define main_mark_no_commit_refs(line)	(((struct line *) (line))->no_commit_refs = 1)
 
@@ -607,6 +641,11 @@ main_request(struct view *view, enum request request, struct line *line)
 	case REQ_MOVE_NEXT_MERGE:
 	case REQ_MOVE_PREV_MERGE:
 		find_merge(view, request);
+		break;
+
+	case REQ_ATTACH_BPLIST:
+		main_attach_bplist(view);
+		redraw_view(view);
 		break;
 
 	default:

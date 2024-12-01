@@ -549,7 +549,7 @@ view_column_draw(struct view *view, struct line *line, unsigned int lineno)
 
 			if (line_in_select_range(view, view->pos.offset + lineno))
 				type = LINE_SELECT_RANGE;
-			else if (column_data.id && bplist_has_rev(&global_bplist, column_data.id))
+			else if (column_data.id && line->bplist)
 				type = LINE_MAIN_BP_MARK;
 			else if (line->type == LINE_MAIN_ANNOTATED)
 				type = LINE_MAIN_ANNOTATED;

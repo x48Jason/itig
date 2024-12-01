@@ -337,6 +337,8 @@ view_driver(struct view *view, enum request request)
 			report("can't put null commit into bplist");
 		} else {
 			bplist_toggle_rev(&global_bplist, argv_env.commit);
+			if (!strcmp(view->name, "main"))
+				main_toggle_bplist(view, argv_env.commit);
 			if (!strcmp(view->name, "quick"))
 				refresh_view(view);
 		}
