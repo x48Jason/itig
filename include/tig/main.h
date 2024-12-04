@@ -17,6 +17,7 @@
 #include "tig/view.h"
 #include "tig/graph.h"
 #include "tig/util.h"
+#include "tig/bplist.h"
 
 struct commit {
 	char id[SIZEOF_REV];		/* SHA1 ID. */
@@ -52,6 +53,7 @@ void main_done(struct view *view);
 bool main_status_exists(struct view *view, enum line_type type);
 
 void main_toggle_bplist(struct view *view, const char *commit_id);
+int main_write_attached_bplist(struct view *view, struct bplist *bpl, const char *fn);
 
 extern struct view main_view;
 

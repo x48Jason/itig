@@ -21,6 +21,7 @@
 #include "tig/prompt.h"
 #include "tig/pager.h"
 #include "tig/types.h"
+#include "tig/main.h"
 #include "tig/bplist.h"
 #include "tig/search.h"
 
@@ -275,6 +276,7 @@ readline_action_generator(const char *text, int state)
 		"set-register",
 		"read-bplist",
 		"write-bplist",
+		"write-attached-bplist",
 		"set-search-mode",
 #define REQ_GROUP(help)
 #define REQ_(req, help)	#req
@@ -1093,6 +1095,11 @@ run_prompt_command(struct view *view, const char *argv[], bool blocking)
 			report("bplist written to %s", argv[1]);
 		else
 			report("failed to write bplist to %s", argv[1]);
+	} else if (!strcmp(cmd, "write-attached-bplist")) {
+		if (!main_write_attached_bplist(view, &global_bplist, argv[1]))
+			report("attached bplist written to %s", argv[1]);
+		else
+			report("failed to write attached bplist to %s", argv[1]);
 	} else if (!strcmp(cmd, "set-search-mode")) {
 		if (!set_search_mode(argv[1]))
 			report("Search mode set to %s", argv[1]);

@@ -378,6 +378,50 @@ main_attach_bplist(struct view *view)
 	}
 }
 
+int
+main_write_attached_bplist(struct view *view, struct bplist *bpl, const char *fn)
+{
+	FILE *fh;
+	size_t i;
+	int rc;
+
+	if (fn == NULL || *fn == '\0')
+		return -1;
+
+	fh = fopen(fn, "w+");
+	if (!fh) {
+		rc = errno;
+		errno = 0;
+		return rc;
+	}
+
+	for (i = 0; i < view->lines; i++) {
+		struct line *line;
+		struct commit *commit;
+
+		line = &view->line[i];
+		if (!line->bplist)
+			continue;
+
+		commit = line->data;
+		if (!commit)
+			continue;
+
+		fprintf(fh, "%s %s\n", commit->id, commit->title);
+	}
+
+	rc = fclose(fh);
+	if (rc) {
+		rc = errno;
+		errno = 0;
+		return rc;
+	}
+
+	bpl->saved = true;
+
+	return 0;
+}
+
 #define main_check_commit_refs(line)	!((line)->no_commit_refs)
 #define main_mark_no_commit_refs(line)	(((struct line *) (line))->no_commit_refs = 1)
 
