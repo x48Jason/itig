@@ -278,6 +278,7 @@ readline_action_generator(const char *text, int state)
 		"write-bplist",
 		"write-attached-bplist",
 		"set-search-mode",
+		"map-commit",
 #define REQ_GROUP(help)
 #define REQ_(req, help)	#req
 		REQ_INFO,
@@ -1105,6 +1106,13 @@ run_prompt_command(struct view *view, const char *argv[], bool blocking)
 			report("Search mode set to %s", argv[1]);
 		else
 			report("Unknown search mode: %s", argv[1]);
+	} else if (!strcmp(cmd, "map-commit")) {
+		long n;
+		n = main_map_commit(view, argv[1]);
+		if (n > 0)
+			report("map-commit done: %ld commits mapped", n);
+		else
+			report("failed to map-commit %s", argv[1]);
 	} else if (!strcmp(cmd, "save-display")) {
 		const char *path = argv[1] ? argv[1] : "tig-display.txt";
 

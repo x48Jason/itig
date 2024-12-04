@@ -422,6 +422,82 @@ main_write_attached_bplist(struct view *view, struct bplist *bpl, const char *fn
 	return 0;
 }
 
+static int
+find_line_by_subject_do(struct view *view, const char *subject, void (*line_func)(struct line *line))
+{
+	struct commit *commit;
+	struct line *line;
+	int i, n;
+
+	n = 0;
+	for (i = 0; i < view->lines; i++) {
+		line = &view->line[i];
+		commit = line->data;
+		if (!commit)
+			continue;
+		if (strcmp(commit->title, subject) == 0) {
+			(*line_func)(line);
+			n++;
+		}
+	}
+
+	return n;
+}
+
+struct map_commit_ctx {
+	struct view *view;
+	long count;
+};
+
+static void
+line_mark_bplist(struct line *line)
+{
+	line->bplist = true;
+}
+
+static int
+map_one_commit(const char *rev, void *data)
+{
+	struct map_commit_ctx *ctx = data;
+	struct view *view = ctx->view;
+	const char **av = NULL;
+	char *subject;
+	struct line *line;
+
+	argv_append(&av, "git");
+	argv_append(&av, "show");
+	argv_append(&av, "--format=%s");
+	argv_append(&av, "--no-patch");
+	argv_append(&av, rev);
+	subject = io_run_alloc_buf(av, NULL);
+	if (!subject)
+		die("failed to io_run_alloc_buf");
+	string_trim(subject);
+	io_trace("map commit: %s %s\n", rev, subject);
+
+	ctx->count += find_line_by_subject_do(view, subject, line_mark_bplist);
+
+	return IO_FUNC_CONTINUE;
+}
+
+long
+main_map_commit(struct view *view, const char *rev_range)
+{
+	const char **av = NULL;
+	struct map_commit_ctx ctx;
+
+	argv_append(&av, "git");
+	argv_append(&av, "rev-list");
+	argv_append(&av, "--no-merges");
+	argv_append(&av, rev_range);
+	ctx.view = view;
+	ctx.count = 0;
+	if (!io_run_exec_func(av, map_one_commit, &ctx))
+		die("failed to map_commit");
+
+	return ctx.count;
+}
+
 #define main_check_commit_refs(line)	!((line)->no_commit_refs)
 #define main_mark_no_commit_refs(line)	(((struct line *) (line))->no_commit_refs = 1)
 

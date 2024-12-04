@@ -54,6 +54,7 @@ bool main_status_exists(struct view *view, enum line_type type);
 
 void main_toggle_bplist(struct view *view, const char *commit_id);
 int main_write_attached_bplist(struct view *view, struct bplist *bpl, const char *fn);
+long main_map_commit(struct view *view, const char *rev_range);
 
 extern struct view main_view;
 
