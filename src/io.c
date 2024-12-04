@@ -724,7 +724,7 @@ io_run_exec_func(const char **argv, int (*func)(const char *rev, void *data), vo
 			break;
 	}
 	io_done(&io);
-	return ret == IO_FUNC_DONE;
+	return ret == IO_FUNC_DONE || ret == IO_FUNC_CONTINUE;
 }
 
 bool
