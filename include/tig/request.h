@@ -82,6 +82,7 @@
 	REQ_(OPTIONS,		"Open the options menu"), \
 	REQ_(SCREEN_REDRAW,	"Redraw the screen"), \
 	REQ_(TOGGLE_BP_MARK,	"Toggle BP mark"), \
+	REQ_(BPLIST_SEARCH_LIMIT,	"Set bplist search limit"), \
 	REQ_(ADD_BPLIST,	"Add to BP list"), \
 	REQ_(DEL_BPLIST,	"Del from BP list"), \
 	REQ_(CLEAR_BPLIST,	"Clear BP list"), \

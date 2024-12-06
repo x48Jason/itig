@@ -150,6 +150,7 @@ struct view {
 	/* Buffering */
 	size_t lines;		/* Total number of lines */
 	struct line *line;	/* Line index */
+	long bplist_search_limit;
 
 	/* Number of lines with custom status, not to be counted in the
 	 * view title. */

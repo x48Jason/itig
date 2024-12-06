@@ -17,6 +17,7 @@
 #include "tig/view.h"
 
 int set_search_mode(const char *mode);
+void set_bplist_search_limit(struct view *view, long lineno);
 void reset_search(struct view *view);
 void search_view(struct view *view, enum request request);
 void find_next(struct view *view, enum request request);

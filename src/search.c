@@ -37,6 +37,15 @@ set_search_mode(const char *mode)
 	return -1;
 }
 
+void
+set_bplist_search_limit(struct view *view, long lineno)
+{
+	if (view->bplist_search_limit == lineno)
+		view->bplist_search_limit = -1;
+	else
+		view->bplist_search_limit = lineno;
+}
+
 bool
 grep_text(struct view *view, const char *text[])
 {
@@ -203,6 +212,11 @@ find_next_bplist_line(struct view *view, enum request request)
 		lineno += direction;
 		if (lineno >= view->lines || lineno < 0)
 			break;
+
+		if (lineno == view->bplist_search_limit) {
+			select_view_line(view, lineno);
+			break;
+		}
 
 		if (!view->line[lineno].bplist)
 			continue;

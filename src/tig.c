@@ -344,6 +344,11 @@ view_driver(struct view *view, enum request request)
 		}
 		break;
 
+	case REQ_BPLIST_SEARCH_LIMIT:
+		set_bplist_search_limit(view, view->pos.lineno);
+		report("set bplist search limit: %lu", view->pos.lineno);
+		break;
+
 	case REQ_ADD_BPLIST:
 		bplist_add_rev(&global_bplist, argv_env.commit, NULL);
 		if (!strcmp(view->name, "quick"))
