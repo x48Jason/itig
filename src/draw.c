@@ -36,6 +36,12 @@ static const enum line_type palette_colors[] = {
 	LINE_PALETTE_13,
 };
 
+static bool
+line_type_is_override(enum line_type type)
+{
+	return type == LINE_MAIN_BP_MARK || type == LINE_SELECT_RANGE;
+}
+
 /*
  * View drawing.
  */
@@ -84,7 +90,7 @@ draw_chars(struct view *view, enum line_type type, const char *string, int lengt
 		waddnstr(view->win, string, len);
 
 	if (trimmed && use_tilde) {
-		set_view_attr(view, LINE_DELIMITER);
+		set_view_attr(view, line_type_is_override(type) ? type : LINE_DELIMITER);
 		waddstr(view->win, opt_truncation_delimiter ? opt_truncation_delimiter : "~");
 		col++;
 	}
@@ -234,7 +240,7 @@ draw_field(struct view *view, enum line_type type, const char *text, int width, 
 }
 
 static bool
-draw_date(struct view *view, struct view_column *column, const struct time *time)
+draw_date(struct view *view, enum line_type type, struct view_column *column, const struct time *time)
 {
 	struct date_options *opt = &column->opt.date;
 	enum date date = opt->display;
@@ -244,11 +250,14 @@ draw_date(struct view *view, struct view_column *column, const struct time *time
 	if (date == DATE_NO)
 		return false;
 
-	return draw_field(view, LINE_DATE, text, column->width, align, false);
+	if (type == LINE_NONE)
+		type = LINE_DATE;
+
+	return draw_field(view, type, text, column->width, align, false);
 }
 
 static bool
-draw_author(struct view *view, struct view_column *column, const struct ident *author)
+draw_author(struct view *view, enum line_type type, struct view_column *column, const struct ident *author)
 {
 	bool trim = author_trim(column->width);
 	const char *text = mkauthor(author, MAX(column->opt.author.width, column->opt.author.maxwidth),
@@ -257,11 +266,14 @@ draw_author(struct view *view, struct view_column *column, const struct ident *a
 	if (column->opt.author.display == AUTHOR_NO)
 		return false;
 
-	return draw_field(view, LINE_AUTHOR, text, column->width, ALIGN_LEFT, trim);
+	if (type == LINE_NONE)
+		type = LINE_AUTHOR;
+
+	return draw_field(view, type, text, column->width, ALIGN_LEFT, trim);
 }
 
 static bool
-draw_committer(struct view *view, struct view_column *column, const struct ident *committer)
+draw_committer(struct view *view, enum line_type type, struct view_column *column, const struct ident *committer)
 {
 	bool trim = author_trim(column->width);
 	const char *text = mkcommitter(committer, MAX(column->opt.committer.width, column->opt.committer.maxwidth),
@@ -270,14 +282,15 @@ draw_committer(struct view *view, struct view_column *column, const struct ident
 	if (column->opt.committer.display == COMMITTER_NO)
 		return false;
 
-	return draw_field(view, LINE_COMMITTER, text, column->width, ALIGN_LEFT, trim);
+	if (type == LINE_NONE)
+		type = LINE_COMMITTER;
+
+	return draw_field(view, type, text, column->width, ALIGN_LEFT, trim);
 }
 
 static bool
-draw_id(struct view *view, struct view_column *column, const char *id)
+draw_id(struct view *view, enum line_type type, struct view_column *column, const char *id)
 {
-	enum line_type type = LINE_ID;
-
 	if (!column->opt.id.display)
 		return false;
 
@@ -286,6 +299,9 @@ draw_id(struct view *view, struct view_column *column, const char *id)
 
 		type = palette_colors[color % ARRAY_SIZE(palette_colors)];
 	}
+
+	if (type == LINE_NONE)
+		type = LINE_ID;
 
 	return draw_field(view, type, id, column->width, ALIGN_LEFT, false);
 }
@@ -374,29 +390,39 @@ draw_lineno(struct view *view, struct view_column *column, unsigned int lineno, 
 }
 
 static bool
-draw_ref(struct view *view, struct view_column *column, const struct ref *ref)
+draw_ref(struct view *view, enum line_type type, struct view_column *column, const struct ref *ref)
 {
-	enum line_type type = !ref || !ref->valid ? LINE_DEFAULT : get_line_type_from_ref(ref);
 	const char *name = ref ? ref->name : NULL;
+
+	if (type == LINE_NONE)
+		type = !ref || !ref->valid ? LINE_DEFAULT : get_line_type_from_ref(ref);
 
 	return draw_field(view, type, name, column->width, ALIGN_LEFT, false);
 }
 
 static bool
-draw_refs(struct view *view, struct view_column *column, const struct ref *refs)
+draw_refs(struct view *view, enum line_type type, struct view_column *column, const struct ref *refs)
 {
 	for (; refs; refs = refs->next) {
+		enum line_type type0;
 		const struct ref *ref = refs;
-		enum line_type type = get_line_type_from_ref(ref);
 		const struct ref_format *format = get_ref_format(opt_reference_format, ref);
 
 		if (!strcmp(format->start, "hide:") && !*format->end)
 			continue;
 
-		if (draw_formatted(view, type, "%s%s%s", format->start, ref->name, format->end))
+		if (type == LINE_NONE)
+			type0 = get_line_type_from_ref(ref);
+		else
+			type0 = type;
+		if (draw_formatted(view, type0, "%s%s%s", format->start, ref->name, format->end))
 			return true;
 
-		if (draw_text(view, LINE_DEFAULT, " "))
+		if (type == LINE_NONE)
+			type0 = LINE_DEFAULT;
+		else
+			type0 = type;
+		if (draw_text(view, type0, " "))
 			return true;
 	}
 
@@ -425,41 +451,65 @@ get_graph_color(int color_id)
 	return palette_colors[color_id];
 }
 
+struct graph_ctx {
+	struct view *view;
+	enum line_type type;
+};
+
 static bool
-draw_graph_utf8(void *view, const struct graph *graph, const struct graph_symbol *symbol, int color_id, bool first)
+draw_graph_utf8(void *ctx0, const struct graph *graph, const struct graph_symbol *symbol, int color_id, bool first)
 {
 	const char *chars = graph->symbol_to_utf8(symbol);
+	struct graph_ctx *ctx = ctx0;
+	struct view *view = ctx->view;
+	enum line_type type = ctx->type;
 
-	return draw_text(view, get_graph_color(color_id), chars + !!first);
+	if (type == LINE_NONE)
+		type = get_graph_color(color_id);
+	return draw_text(view, type, chars + !!first);
 }
 
 static bool
-draw_graph_ascii(void *view, const struct graph *graph, const struct graph_symbol *symbol, int color_id, bool first)
+draw_graph_ascii(void *ctx0, const struct graph *graph, const struct graph_symbol *symbol, int color_id, bool first)
 {
 	const char *chars = graph->symbol_to_ascii(symbol);
+	struct graph_ctx *ctx = ctx0;
+	struct view *view = ctx->view;
+	enum line_type type = ctx->type;
 
-	return draw_text(view, get_graph_color(color_id), chars + !!first);
+	if (type == LINE_NONE)
+		type = get_graph_color(color_id);
+	return draw_text(view, type, chars + !!first);
 }
 
 static bool
-draw_graph_chtype(void *view, const struct graph *graph, const struct graph_symbol *symbol, int color_id, bool first)
+draw_graph_chtype(void *ctx0, const struct graph *graph, const struct graph_symbol *symbol, int color_id, bool first)
 {
 	const chtype *chars = graph->symbol_to_chtype(symbol);
+	struct graph_ctx *ctx = ctx0;
+	struct view *view = ctx->view;
+	enum line_type type = ctx->type;
 
-	return draw_graphic(view, get_graph_color(color_id), chars + !!first, 2 - !!first, false);
+	if (type == LINE_NONE)
+		type = get_graph_color(color_id);
+	return draw_graphic(view, type, chars + !!first, 2 - !!first, false);
 }
 
 static bool
-draw_graph(struct view *view, const struct graph *graph, const struct graph_canvas *canvas)
+draw_graph(struct view *view, enum line_type type, const struct graph *graph, const struct graph_canvas *canvas)
 {
 	static const graph_symbol_iterator_fn fns[] = {
 		draw_graph_ascii,
 		draw_graph_chtype,
 		draw_graph_utf8
 	};
+	struct graph_ctx ctx = { view, type };
 
-	graph->foreach_symbol(graph, canvas, fns[opt_line_graphics], view);
-	return draw_text(view, LINE_DEFAULT, " ");
+	graph->foreach_symbol(graph, canvas, fns[opt_line_graphics], &ctx);
+
+	if (type == LINE_NONE)
+		type = LINE_DEFAULT;
+	return draw_text(view, type, " ");
 }
 
 static bool
@@ -467,13 +517,22 @@ draw_commit_title(struct view *view, struct view_column *column, enum line_type 
 		  const struct graph *graph, const struct graph_canvas *graph_canvas,
 		  const struct ref *refs, const char *commit_title)
 {
+	enum line_type type0;
+
 	if (!column->opt.commit_title.display)
 		return false;
+
+	if (!line_type_is_override(type))
+		type0 = LINE_NONE;
+	else
+		type0 = type;
+
 	if (column->opt.commit_title.graph && graph && graph_canvas &&
-	    draw_graph(view, graph, graph_canvas))
+	    draw_graph(view, type0, graph, graph_canvas))
 		return true;
+
 	if (column->opt.commit_title.refs && refs &&
-	    draw_refs(view, column, refs))
+	    draw_refs(view, type0, column, refs))
 		return true;
 
 	return draw_text_overflow(view, commit_title, type,
@@ -485,12 +544,18 @@ view_column_draw(struct view *view, struct line *line, unsigned int lineno)
 {
 	struct view_column *column = view->columns;
 	struct view_column_data column_data = {0};
+	enum line_type type = LINE_NONE;
 
 	if (!view->ops->get_column_data(view, line, &column_data))
 		return true;
 
 	if (column_data.section)
 		column = column_data.section;
+
+	if (line_in_select_range(view, view->pos.offset + lineno))
+		type = LINE_SELECT_RANGE;
+	else if (column_data.id && line->bplist)
+		type = LINE_MAIN_BP_MARK;
 
 	for (; column; column = column->next) {
 		mode_t mode = column_data.mode ? *column_data.mode : 0;
@@ -500,27 +565,27 @@ view_column_draw(struct view *view, struct line *line, unsigned int lineno)
 
 		switch (column->type) {
 		case VIEW_COLUMN_DATE:
-			if (draw_date(view, column, column_data.date))
+			if (draw_date(view, type, column, column_data.date))
 				return true;
 			continue;
 
 		case VIEW_COLUMN_AUTHOR:
-			if (draw_author(view, column, column_data.author))
+			if (draw_author(view, type, column, column_data.author))
 				return true;
 			continue;
 
 		case VIEW_COLUMN_COMMITTER:
-			if (draw_committer(view, column, column_data.committer))
+			if (draw_committer(view, type, column, column_data.committer))
 				return true;
 			continue;
 
 		case VIEW_COLUMN_REF:
-			if (draw_ref(view, column, column_data.ref))
+			if (draw_ref(view, type, column, column_data.ref))
 				return true;
 			continue;
 
 		case VIEW_COLUMN_ID:
-			if (draw_id(view, column, column_data.id))
+			if (draw_id(view, type, column, column_data.id))
 				return true;
 			continue;
 
@@ -545,16 +610,12 @@ view_column_draw(struct view *view, struct line *line, unsigned int lineno)
 
 		case VIEW_COLUMN_COMMIT_TITLE:
 		{
-			enum line_type type;
-
-			if (line_in_select_range(view, view->pos.offset + lineno))
-				type = LINE_SELECT_RANGE;
-			else if (column_data.id && line->bplist)
-				type = LINE_MAIN_BP_MARK;
-			else if (line->type == LINE_MAIN_ANNOTATED)
-				type = LINE_MAIN_ANNOTATED;
-			else
-				type = LINE_MAIN_COMMIT;
+			if (type == LINE_NONE) {
+				if (line->type == LINE_MAIN_ANNOTATED)
+					type = LINE_MAIN_ANNOTATED;
+				else
+					type = LINE_MAIN_COMMIT;
+			}
 
 			if (draw_commit_title(view, column, type, column_data.graph, column_data.graph_canvas,
 					      column_data.refs, column_data.commit_title))
