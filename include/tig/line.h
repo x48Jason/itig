@@ -75,6 +75,7 @@ struct ref;
 	_(MAIN_HEAD,		""), \
 	_(MAIN_BP_MARK,		""), \
 	_(SELECT_RANGE,		""), \
+	_(BPLIST_SEARCH_LIMIT,	""), \
 	_(STAT_NONE,		""), \
 	_(STAT_STAGED,		""), \
 	_(STAT_UNSTAGED,	""), \
