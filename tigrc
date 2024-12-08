@@ -73,6 +73,7 @@ set show-changes		= yes		# Show changes commits in the main view?
 set wrap-lines			= no		# Wrap long lines in pager views?
 set tab-size			= 8		# Number of spaces to use when expanding tabs
 set line-graphics		= default	# Enum: ascii, default, utf-8
+set history-size		= 256
 
 # Format reference names based on type.
 #  - head		: The current HEAD.
@@ -183,9 +184,8 @@ bind refs	!	?git branch -D %(branch)
 bind generic	<C-b>	toggle-bp-mark
 bind generic	<C-g>	bplist-search-limit
 bind quick	<C-f>	%=(bplist)~/bin/find-fix-commit.sh %(commit)
-bind generic	<C-s>	toggle-select-mark
-bind generic	<C-@>	toggle-select-mark
-bind generic	<C-v>	select-add-bplist
+bind generic	V	toggle-select-mark
+bind generic	<C-a>	select-add-bplist
 
 bind main	x	=(bplist)~/bin/find-commit-feature-rev-range.sh %(commit) %(ref)
 bind blame	x	=(bplist)~/bin/find-commit-feature-rev-range.sh %(commit) %(ref)
@@ -295,7 +295,7 @@ bind generic	I	:toggle sort-order	# Toggle ascending/descending sort order
 bind generic	i	:toggle sort-field	# Toggle field to sort by
 bind generic	<Hash>	:toggle line-number	# Toggle line numbers
 #bind generic	D	:toggle date		# Toggle date display
-bind generic	a	:toggle author		# Toggle author display
+bind generic	A	:toggle author		# Toggle author display
 bind generic	M	:toggle committer	# Toggle committer display
 bind generic	~	:toggle line-graphics	# Toggle (line) graphics mode
 bind generic	F	:toggle file-name	# Toggle file name display
