@@ -59,6 +59,11 @@ void view_select_range_to_bplist(struct view *view, bool add)
 		struct view_column_data column_data;
 		struct line *line = view->line + n;
 
+		if (add)
+			line->bplist = 1;
+		else
+			line->bplist = 0;
+#if 0
 		if (!view->ops || !view->ops->get_column_data ||
 		    !view->ops->get_column_data(view, line, &column_data))
 			continue;
@@ -71,6 +76,7 @@ void view_select_range_to_bplist(struct view *view, bool add)
 			bplist_add_rev(&global_bplist, column_data.id, NULL);
 		else
 			bplist_rem_rev(&global_bplist, column_data.id);
+#endif
 	}
 }
 

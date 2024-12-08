@@ -392,16 +392,14 @@ view_driver(struct view *view, enum request request)
 
 	case REQ_SELECT_ADD_BPLIST:
 		view_select_range_to_bplist(view, true);
-		if (!strcmp(view->name, "quick"))
-			refresh_view(view);
+		view_select_range_reset(view);
+		redraw_view(view);
 		break;
 
 	case REQ_SELECT_DEL_BPLIST:
 		view_select_range_to_bplist(view, false);
-		if (!strcmp(view->name, "quick")) {
-			view_select_range_reset(view);
-			refresh_view(view);
-		}
+		view_select_range_reset(view);
+		redraw_view(view);
 		break;
 
 	case REQ_CLEAR_SELECT_RANGE:
