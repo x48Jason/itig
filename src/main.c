@@ -444,6 +444,27 @@ find_line_by_subject_do(struct view *view, const char *subject, void (*line_func
 	return n;
 }
 
+static int
+find_line_by_rev_do(struct view *view, const char *rev, void (*line_func)(struct line *line))
+{
+	struct commit *commit;
+	struct line *line;
+	int i;
+
+	for (i = 0; i < view->lines; i++) {
+		line = &view->line[i];
+		commit = line->data;
+		if (!commit)
+			continue;
+		if (strncmp(commit->id, rev, 40) == 0) {
+			(*line_func)(line);
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 struct map_commit_ctx {
 	struct view *view;
 	long count;
@@ -495,6 +516,45 @@ main_map_commit(struct view *view, const char *rev_range)
 	if (!io_run_exec_func(av, map_one_commit, &ctx))
 		die("failed to map_commit");
 
+	return ctx.count;
+}
+
+struct import_commit_ctx {
+	long count;
+	struct view *view;
+};
+
+static int
+import_one_commit(const char *rev, void *data)
+{
+	struct import_commit_ctx *ctx = data;
+	ctx->count += find_line_by_rev_do(ctx->view, rev, line_mark_bplist);
+	return IO_FUNC_CONTINUE;
+}
+
+long
+main_bplist_import(struct view *view, const char *argv[])
+{
+	struct import_commit_ctx ctx;
+	const char *av[4];
+	char *cmd;
+	int i = 0;
+
+	cmd = argv_to_string_alloc(argv, " ");
+	if (!cmd)
+		return 0;
+
+	av[0] = "/bin/sh";
+	av[1] = "-c";
+	av[2] = cmd;
+	av[3] = NULL;
+
+	ctx.count = 0;
+	ctx.view = view;
+	if (!io_run_exec_func(av, import_one_commit, &ctx))
+		die("failed to bplist-import");
+
+	free(cmd);
 	return ctx.count;
 }
 
