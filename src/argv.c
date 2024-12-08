@@ -60,14 +60,15 @@ concat_argv(const char *argv[], char *buf, size_t buflen, const char *sep, bool 
 char *
 argv_to_string_alloc(const char *argv[], const char *sep)
 {
-	size_t i, size = 0;
+	size_t i, buflen, size = 0;
 	char *buf;
 
 	for (i = 0; argv[i]; i++)
 		size += strlen(argv[i]);
 
-	buf = malloc(size + 1);
-	if (buf && argv_to_string(argv, buf, size + 1, sep))
+	buflen = size + i * strlen(sep) + 1;
+	buf = malloc(buflen);
+	if (buf && argv_to_string(argv, buf, buflen, sep))
 		return buf;
 	free(buf);
 	return NULL;
