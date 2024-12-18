@@ -348,15 +348,8 @@ main_done(struct view *view)
 void
 main_toggle_bplist(struct view *view, const char *commit_id)
 {
-	int j;
-
-	for (j = 0; j < view->lines; j++) {
-		struct commit *commit = view->line[j].data;
-		if (strncmp(commit->id, commit_id, 40) == 0) {
-			view->line[j].bplist = view->line[j].bplist ? 0 : 1;
-			break;
-		}
-	}
+	struct line *line = &view->line[view->pos.lineno];
+	line->bplist = line->bplist ? 0 : 1;
 }
 
 void
