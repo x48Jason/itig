@@ -403,7 +403,7 @@ color main-replace		cyan	default
 color main-tracked		yellow	default	bold
 color main-ref			cyan	default
 color main-head			cyan	default	bold
-color main-bp-mark		white	yellow
+color main-bp-mark		black	yellow
 color select-range		white	magenta
 color bplist-search-limit	white	red
 color stat-none			default	default
