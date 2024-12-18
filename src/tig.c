@@ -391,12 +391,18 @@ view_driver(struct view *view, enum request request)
 		break;
 
 	case REQ_SELECT_ADD_BPLIST:
+		if (strcmp(view->name, "main") != 0 && strcmp(view->name, "quick") != 0)
+			break;
+
 		view_select_range_to_bplist(view, true);
 		view_select_range_reset(view);
 		redraw_view(view);
 		break;
 
 	case REQ_SELECT_DEL_BPLIST:
+		if (strcmp(view->name, "main") != 0 && strcmp(view->name, "quick") != 0)
+			break;
+
 		view_select_range_to_bplist(view, false);
 		view_select_range_reset(view);
 		redraw_view(view);
