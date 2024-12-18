@@ -350,16 +350,19 @@ view_driver(struct view *view, enum request request)
 		break;
 
 	case REQ_ADD_BPLIST:
+		view_line_set_bplist(view, true);
 		bplist_add_rev(&global_bplist, argv_env.commit, NULL);
 		if (!strcmp(view->name, "quick"))
 			refresh_view(view);
 		break;
 	case REQ_DEL_BPLIST:
+		view_line_set_bplist(view, false);
 		bplist_rem_rev(&global_bplist, argv_env.commit);
 		if (!strcmp(view->name, "quick"))
 			refresh_view(view);
 		break;
 	case REQ_CLEAR_BPLIST:
+		view_clear_all_bplist(view);
 		bplist_rem_all(&global_bplist);
 		if (!strcmp(view->name, "quick"))
 			refresh_view(view);

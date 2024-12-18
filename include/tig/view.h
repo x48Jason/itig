@@ -273,6 +273,8 @@ struct view *get_view(int index);
  */
 
 bool line_in_select_range(struct view *view, unsigned long lineno);
+void view_line_set_bplist(struct view *view, bool add);
+void view_clear_all_bplist(struct view *view);
 void view_select_range_to_bplist(struct view *view, bool add);
 void view_select_range_reset(struct view *view);
 bool goto_view_line(struct view *view, unsigned long offset, unsigned long lineno);

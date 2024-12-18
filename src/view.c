@@ -43,6 +43,28 @@ line_in_select_range(struct view *view, unsigned long lineno)
 	return false;
 }	
 
+void view_line_set_bplist(struct view *view, bool add)
+{
+	struct line *line = &view->line[view->pos.lineno];
+
+	if (add)
+		line->bplist = 1;
+	else
+		line->bplist = 0;
+}
+
+void view_clear_all_bplist(struct view *view)
+{
+	int i;
+
+	for (i = 0; i < view->lines; i++) {
+		struct line *line = &view->line[i];
+
+		if (line->bplist)
+			line->bplist = 0;
+	}
+}
+
 void view_select_range_to_bplist(struct view *view, bool add)
 {
 	struct select_range *r;
