@@ -21,6 +21,7 @@
 #include "tig/draw.h"
 #include "tig/display.h"
 #include "tig/bplist.h"
+#include "tig/main.h"
 
 bool
 line_in_select_range(struct view *view, unsigned long lineno)
@@ -80,25 +81,15 @@ void view_select_range_to_bplist(struct view *view, bool add)
 	for (n = from; n <= to; n++) {
 		struct view_column_data column_data;
 		struct line *line = view->line + n;
+		struct commit *commit = line->data;
 
-		if (add)
+		if (add) {
 			line->bplist = 1;
-		else
+			bplist_add_rev(&global_bplist, commit->id, NULL);
+		} else {
 			line->bplist = 0;
-#if 0
-		if (!view->ops || !view->ops->get_column_data ||
-		    !view->ops->get_column_data(view, line, &column_data))
-			continue;
-		if (!column_data.id || string_rev_is_null(column_data.id))
-			continue;
-
-		io_trace("%s: line %ld, commit id: %s\n", "select-to-bplist", n, column_data.id);
-
-		if (add)
-			bplist_add_rev(&global_bplist, column_data.id, NULL);
-		else
-			bplist_rem_rev(&global_bplist, column_data.id);
-#endif
+			bplist_rem_rev(&global_bplist, commit->id);
+		}
 	}
 }
 
