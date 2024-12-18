@@ -36,6 +36,8 @@ DEFINE_ALLOCATOR(realloc_reflogs, char *, 32)
 
 static struct view_history main_view_history = { sizeof(unsigned long) };
 
+static struct view_ops main_ops;
+
 bool
 main_status_exists(struct view *view, enum line_type type)
 {
@@ -101,6 +103,9 @@ main_add_commit(struct view *view, enum line_type type, struct commit *template,
 	state->reflogmsg[0] = 0;
 
 	view_column_info_update(view, line);
+
+	if (view->ops == &main_ops && bplist_has_rev(&global_bplist, commit->id))
+		line->bplist = 1;
 
 	if ((opt_start_on_head && is_head_commit(commit->id)) ||
 	    (view->env->goto_id[0] && !strncmp(view->env->goto_id, commit->id, SIZEOF_REV - 1)))
