@@ -364,8 +364,11 @@ view_driver(struct view *view, enum request request)
 	case REQ_CLEAR_BPLIST:
 		view_clear_all_bplist(view);
 		bplist_rem_all(&global_bplist);
+		report("clear-bplist done!");
 		if (!strcmp(view->name, "quick"))
 			refresh_view(view);
+		else
+			redraw_view(view);
 		break;
 	case REQ_BPLIST_SORT:
 		bplist_sort(&global_bplist);
@@ -400,6 +403,7 @@ view_driver(struct view *view, enum request request)
 		view_select_range_to_bplist(view, true);
 		view_select_range_reset(view);
 		redraw_view(view);
+		report("select-add-bplist done!");
 		break;
 
 	case REQ_SELECT_DEL_BPLIST:
@@ -409,6 +413,7 @@ view_driver(struct view *view, enum request request)
 		view_select_range_to_bplist(view, false);
 		view_select_range_reset(view);
 		redraw_view(view);
+		report("select-del-bplist done!");
 		break;
 
 	case REQ_CLEAR_SELECT_RANGE:
