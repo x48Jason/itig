@@ -515,7 +515,13 @@ struct map_commit_ctx {
 static void
 line_mark_bplist(struct line *line)
 {
+	struct commit *commit = line->data;
+
 	line->bplist = true;
+
+	if (!commit)
+		return;
+	bplist_add_rev(&global_bplist, commit->id, commit->title);
 }
 
 static int
