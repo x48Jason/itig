@@ -1093,10 +1093,10 @@ run_prompt_command(struct view *view, const char *argv[], bool blocking)
 		else
 			report("failed to read bplist from %s", argv[1]);
 	} else if (!strcmp(cmd, "write-bplist")) {
-		if (!bplist_write(&global_bplist, argv[1]))
-			report("bplist written to %s", argv[1]);
+		if (!main_write_bplist(view, argv))
+			report("bplist written done!");
 		else
-			report("failed to write bplist to %s", argv[1]);
+			report("failed to write bplist!");
 	} else if (!strcmp(cmd, "write-attached-bplist")) {
 		if (!main_write_attached_bplist(view, &global_bplist, argv[1]))
 			report("attached bplist written to %s", argv[1]);

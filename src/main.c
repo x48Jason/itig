@@ -377,10 +377,10 @@ main_attach_bplist(struct view *view)
 }
 
 int
-main_write_attached_bplist(struct view *view, struct bplist *bpl, const char *fn)
+main_write_line_bplist(struct view *view, const char *fn, bool direction)
 {
 	FILE *fh;
-	size_t i;
+	ssize_t i;
 	int rc;
 
 	if (fn == NULL || *fn == '\0')
@@ -393,7 +393,9 @@ main_write_attached_bplist(struct view *view, struct bplist *bpl, const char *fn
 		return rc;
 	}
 
-	for (i = 0; i < view->lines; i++) {
+	for (i = direction ? 0 : view->lines - 1;
+	     direction ? i < view->lines : i >= 0;
+	     direction ? i++ : i--) {
 		struct line *line;
 		struct commit *commit;
 
@@ -405,6 +407,7 @@ main_write_attached_bplist(struct view *view, struct bplist *bpl, const char *fn
 		if (!commit)
 			continue;
 
+		io_trace("%d: %s %s\n", i, commit->id, commit->title);
 		fprintf(fh, "%s %s\n", commit->id, commit->title);
 	}
 
@@ -415,9 +418,50 @@ main_write_attached_bplist(struct view *view, struct bplist *bpl, const char *fn
 		return rc;
 	}
 
-	bpl->saved = true;
-
 	return 0;
+}
+
+int
+main_write_attached_bplist(struct view *view, struct bplist *bpl, const char *fn)
+{
+	int ret = main_write_line_bplist(view, fn, true);
+	if (ret == 0)
+		bpl->saved = true;
+	return ret;
+}
+
+enum bplist_op_bit {
+	BPLIST_OP_NONE = 0,
+	BPLIST_OP_LINE = 0x1,
+	BPLIST_OP_REVERSE = 0x2,
+};
+
+int main_write_bplist(struct view *view, const char *argv[])
+{
+	struct bplist *bpl = &global_bplist;
+	unsigned int mode = 0;
+	int i = 1, ret;
+
+	while (argv[i]) {
+		if (strncmp(argv[i], "--", 2))
+			break;
+		if (strcmp(argv[i], "--line") == 0)
+			mode |= BPLIST_OP_LINE;
+		else if (strcmp(argv[i], "--reverse") == 0)
+			mode |= BPLIST_OP_REVERSE;
+		i++;
+	}
+	if (argv[i] == NULL)
+		return -1;
+
+	if (!(mode & BPLIST_OP_LINE)) {
+		ret = bplist_write(bpl, argv[i]);
+		if (ret == 0)
+			bpl->saved = true;
+		return ret;
+	}
+
+	return main_write_line_bplist(view, argv[i], !(mode & BPLIST_OP_REVERSE));
 }
 
 static int
