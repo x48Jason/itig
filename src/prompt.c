@@ -1114,6 +1114,7 @@ run_prompt_command(struct view *view, const char *argv[], bool blocking)
 			report("map-commit done: %ld commits mapped", n);
 		else
 			report("failed to map-commit %s", argv[1]);
+		redraw_view(view);
 	} else if (!strcmp(cmd, "bplist-import")) {
 		long n;
 		n = main_bplist_import(view, &argv[1]);
